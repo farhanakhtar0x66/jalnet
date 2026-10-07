@@ -6,6 +6,8 @@ JalNet is a planned map-first water intelligence app. It turns citizen evidence 
 
 **Current state: planning only.** The repository contains the implementation specification, an audit, a dependency analysis and a tracked backlog. No mobile app, backend, AWS infrastructure or live integration has been implemented or verified. Repository publication was explicitly authorized before START; application implementation still awaits explicit START and confirmation that the official hackathon clock permits it.
 
+Published at [farhanakhtar0x66/jalnet](https://github.com/farhanakhtar0x66/jalnet) on branch `main`. The repository is **private**, per the owner's explicit instruction. Public submission visibility will need separate authorization later.
+
 ## Planning documents
 
 - [Primary implementation plan](JalNet_Implementation_Plan.md) — the supplied specification, preserved unchanged; numbered sections 0–100, including the final addendum.

@@ -9,7 +9,7 @@ This checklist tracks work order. The [implementation status matrix](docs/IMPLEM
 - [x] Record P0 requirements, dependencies, decisions and blockers.
 - [x] Create a planning README and phased backlog.
 - [x] Preserve the supplied implementation plan in the repository.
-- [ ] Publish the planning commit to the owner's GitHub `jalnet` repository and verify its contents.
+- [x] Publish the planning commit to the owner's private GitHub `jalnet` repository and verify its contents.
 
 ## Authorization and readiness
 
@@ -104,6 +104,7 @@ This checklist tracks work order. The [implementation status matrix](docs/IMPLEM
 - [ ] Disclose seeded/simulated behavior and all AI coding tools used.
 - [ ] Record a video under three minutes that shows the core loop and AWS.
 - [ ] Test public repository and YouTube access in a signed-out browser.
+- [ ] Obtain explicit authorization before changing the repository from private to public for submission.
 - [ ] Submit the write-up before the verified official deadline and retain the receipt.
 
 ## Only after P0 acceptance

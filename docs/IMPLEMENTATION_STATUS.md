@@ -2,7 +2,19 @@
 
 Planning audit: 2026-10-08, Asia/Kolkata. Source: [JalNet_Implementation_Plan.md](../JalNet_Implementation_Plan.md) (5,679 lines, numbered sections 0–100, including the addendum after the end marker). Explicit user instructions govern authorization and workflow; the plan supplies project requirements.
 
-Application implementation has not been authorized. The initial audit created only the three planning documents. The user subsequently authorized a GitHub planning repository before START, including these documents, the unchanged source specification, README, TODO and `.gitignore`. Publication preparation is in progress. No application code, dependency installation, project infrastructure, deployment or live AWS test has been created or performed. This publication exception does not open the implementation gate.
+Application implementation has not been authorized. The initial audit created only the three planning documents. The user subsequently authorized a GitHub planning repository before START, including these documents, the unchanged source specification, README, TODO and `.gitignore`. The planning files have been published to the private [farhanakhtar0x66/jalnet repository](https://github.com/farhanakhtar0x66/jalnet), branch `main`, and the user explicitly chose to keep it private. No application code, dependency installation, project infrastructure, deployment or live AWS test has been created or performed. This publication exception does not open the implementation gate.
+
+## Repository publication evidence
+
+- Initial planning commit: `dc26f9d31cd86dd59098fbb28b25f8fc92f1b7fe`.
+- `gh repo create farhanakhtar0x66/jalnet --private --description ... --source . --remote origin --push` succeeded; `main` tracks `origin/main`.
+- GitHub REST repository metadata returned `private: true`, `default_branch: main` and the expected owner/repository URL.
+- GitHub REST commit SHA matched `git rev-parse HEAD` for the initial push. The recursive remote tree contained exactly the seven intended files; every blob SHA matched `git ls-tree -r HEAD`.
+- The supplied source plan was compared byte for byte with the original and remained unchanged. Local links, code fences, seven-file inventory, permitted status rows and a common credential-pattern scan passed.
+- `git diff --cached --check` passed for newly authored files. The unchanged source plan retains its original Markdown hard-break spaces and final blank line, which the all-file whitespace check flags; it was not rewritten merely to remove them.
+- The first proposed public create-and-push action was rejected by automatic approval review. No public repository was created; private creation succeeded, followed by the user's explicit private-visibility instruction.
+
+This is documentation/repository evidence only. The application workspace, license, public submission access and all live product proofs remain incomplete.
 
 ## Initial audit evidence before repository publication
 
@@ -77,12 +89,12 @@ Record failures at the relevant boundary and continue independent authorized wor
 
 ## P0 requirement matrix
 
-All verification entries below describe required future evidence, not passing results. `VERIFIED` is reserved for executed checks or concrete inspected artifacts. Allowed statuses: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `IMPLEMENTED_UNVERIFIED`, `VERIFIED`. No P0 product requirement is currently verified.
+Verification entries distinguish existing planning/repository evidence from required future product evidence. `VERIFIED` is reserved for executed checks or concrete inspected artifacts. Allowed statuses: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `IMPLEMENTED_UNVERIFIED`, `VERIFIED`. No complete P0 product requirement is currently verified.
 
 | ID | Requirement | Spec section | Priority | Dependencies | Status | Verification |
 |----|-------------|--------------|----------|--------------|--------|--------------|
 | GATE-01 | Explicit authorization and official project clock before implementation | Header, 1, 7, 46, 93, 94; user §§4,21 | P0 | User START | BLOCKED | Pending — user confirmation; no code or provisioning beforehand |
-| P0-001 | Git/workspace, package manager, reproducible compatible versions | 7, 46, 48 | P0 | GATE-01 | NOT_STARTED | Pending — manifests, lockfile, history and clean install |
+| P0-001 | Git/workspace, package manager, reproducible compatible versions | 7, 46, 48 | P0 | GATE-01 | IN_PROGRESS | Planning Git repository published; application manifests, lockfile and clean install pending START |
 | P0-002 | Shared strict Zod API/domain/media contracts | 8, 10, 43.2, 81 | P0 | P0-001 | NOT_STARTED | Pending — valid and invalid request/output contract tests |
 | P0-003 | Pure domain/geo functions and persistence/provider boundaries | 6.3, 28, 78 | P0 | P0-002 | NOT_STARTED | Pending — domain tests independent of AWS; provider review |
 | P0-004 | One infrastructure framework: CDK TypeScript | 7, 37, 77 | P0 | P0-001 | NOT_STARTED | Pending — synth and template security validation |
@@ -160,8 +172,8 @@ All verification entries below describe required future evidence, not passing re
 | P0-076 | Five consecutive complete live rehearsals from clean demo reset | 42.3, 46, 69 | P0 | P0-068, P0-072, P0-075 | NOT_STARTED | Pending — five recorded reset → capture → warning → eligible droplets runs |
 | P0-077 | Budget/request/log controls and feature kill switches | 50, 67, 68 | P0 | P0-004, P0-013, P0-030 | NOT_STARTED | Pending — configuration/quotas review; optional features removable without core failure |
 | P0-078 | Architecture freeze after phone/map/API/S3/AI/fusion/route/reset proofs | 100 | P0 | P0-076 | NOT_STARTED | Pending — evidence-backed freeze; no dependency major upgrades afterward |
-| P0-079 | README, architecture/privacy/source/demo docs and honest limitations | 62, 64, 65, 93 | P0 | P0-072, P0-075 | NOT_STARTED | Pending — documentation matches actual modules/resources/verification |
-| P0-080 | Public repo, licenses, attribution and AI coding tool disclosure | 1, 48, 64, 93 | P0 | P0-001, P0-057, P0-079 | NOT_STARTED | Pending — public signed-out repository and history/license/secret review |
+| P0-079 | README, architecture/privacy/source/demo docs and honest limitations | 62, 64, 65, 93 | P0 | P0-072, P0-075 | IN_PROGRESS | Planning README/source/status/TODO published; implementation, privacy and demo evidence docs pending |
+| P0-080 | Public repo, licenses, attribution and AI coding tool disclosure | 1, 48, 64, 93 | P0 | P0-001, P0-057, P0-079 | IN_PROGRESS | Private repository and planning AI attribution verified; public visibility explicitly deferred; license/submission review pending |
 | P0-081 | Sub-three-minute video showing live critical loop and AWS | 63, 69, 93 | P0 | P0-076, P0-079 | NOT_STARTED | Pending — measured video duration, signed-out YouTube link and visible AWS/data disclosure |
 | P0-082 | Final write-up/submission before verified official deadline | 1, 65, 93 | P0 | P0-080, P0-081; B-01 | NOT_STARTED | Pending — exact published deadline and submission receipt; no guessed schedule |
 
