@@ -1,70 +1,77 @@
 # JalNet
 
-> Know your water before it becomes a problem.
+A map-first water intelligence prototype: capture an observation, upload evidence privately, review a conservative assessment, confirm the report, update a fused incident and warn when it intersects a saved route. Droplets reward accepted contributions and independently supported usefulness.
 
-JalNet is a planned map-first water intelligence app. It turns citizen evidence into local incidents and checks whether those incidents affect the places and routes people depend on.
+Implementation has started. **Live AWS access is BLOCKED_AWAITING_SSO** until the intended `jalnet` profile becomes available in `ap-south-1`. LOCAL/DEMO providers let development continue; they never establish DynamoDB, S3, Nova, Cognito or Amazon Location verification. P0 is not complete.
 
-**Current state: planning only.** The repository contains the implementation specification, an audit, a dependency analysis and a tracked backlog. No mobile app, backend, AWS infrastructure or live integration has been implemented or verified. Repository publication was explicitly authorized before START; application implementation still awaits explicit START and confirmation that the official hackathon clock permits it.
+[Specification](JalNet_Implementation_Plan.md) · [Status](docs/IMPLEMENTATION_STATUS.md) · [Decisions](docs/DECISIONS.md) · [Blockers](docs/BLOCKERS.md) · [Architecture](docs/ARCHITECTURE.md) · [Privacy](docs/PRIVACY.md) · [Local implementation report](docs/IMPLEMENTATION_REPORT.md) · [Backlog](TODO.md)
 
-Published at [farhanakhtar0x66/jalnet](https://github.com/farhanakhtar0x66/jalnet) on branch `main`. The repository is **public**, following the owner's explicit authorization on October 8, 2026. Write-access invitations have been sent to [Aryanxp1](https://github.com/Aryanxp1) (team leader) and [shubhrgunjan](https://github.com/shubhrgunjan) (team member); recipients must accept their invitations to activate collaboration access.
+## Development
 
-## Planning documents
+Pinned Node **24.21.0**, pnpm **10.34.6**, Expo **57.0.27**, React Native **0.86.3**, React **19.2.3**, MapLibre **11.5.0**. Use an Expo development build; Expo Go cannot run MapLibre. Android builds need JDK 17, Android 36 and the build-tools/NDK selected by Expo (the executed build used build-tools 35.0.0 and NDK 27.1.12297006). The local portable tools/cache are ignored under `.tools`; they are not required repository dependencies.
 
-- [Primary implementation plan](JalNet_Implementation_Plan.md) — the supplied specification, preserved unchanged; numbered sections 0–100, including the final addendum.
-- [Implementation status](docs/IMPLEMENTATION_STATUS.md) — P0 requirements, dependency graph, audit evidence and future verification criteria.
-- [Decisions](docs/DECISIONS.md) — architecture choices, specification conflicts and unresolved contracts.
-- [Blockers](docs/BLOCKERS.md) — authorization, toolchain, account and device prerequisites.
-- [TODO](TODO.md) — phased working checklist.
-
-The implementation plan defines the product. Explicit user instructions govern authorization and supersede earlier planning restrictions where stated. The publication request authorizes this documentation repository; it does not authorize application development or resource provisioning.
-
-## Core workflow to build
-
-```text
-Open real map
-  → Capture real water issue
-  → Upload privately to S3
-  → Obtain a live, validated Nova assessment
-  → Human confirms or manually classifies
-  → Create/fuse an incident
-  → Refresh the map
-  → Intersect a persisted saved route
-  → Show a route warning
-  → Award droplets for accepted usefulness
+```sh
+pnpm install --frozen-lockfile
+pnpm demo:seed
+pnpm local:server
+# In another terminal:
+pnpm mobile:start
 ```
 
-This complete loop has priority over every secondary feature. AI proposes conservative visual observations; it does not establish truth or exact water depth. Incident verification is separate from model confidence, and route warnings must not guarantee road safety.
+The local API binds `127.0.0.1:8787`; Android emulator requests use `http://10.0.2.2:8787`. The mobile default is visibly labelled LOCAL/DEMO. The demo basemap uses MapLibre's official demo style. Local analysis returns uncertainty and manual classification; local routes are straight-line test corridors, not road navigation. Demo identity strings are confined to the localhost server and are not AWS credentials.
 
-## Intended architecture
+For a first native Android build with the SDK/JDK configured:
 
-| Area | Planned stack |
-|---|---|
-| Mobile | React Native, Expo development build, TypeScript |
-| Maps | MapLibre React Native, Amazon Location dynamic maps |
-| State and contracts | TanStack Query, Zustand, shared Zod schemas |
-| Authentication | Cognito and API Gateway authorizer |
-| Backend | API Gateway HTTP API, TypeScript Lambda |
-| Persistence and spatial lookup | DynamoDB, H3, exact distance/intersection checks |
-| Evidence | Private encrypted S3 and owned short-lived presigned uploads |
-| Media analysis | Amazon Bedrock/Nova with configurable model/inference profile |
-| Infrastructure | AWS CDK TypeScript; one infrastructure framework |
+```sh
+pnpm mobile:android
+```
 
-Map assets load directly from Amazon Location with a restricted, expiring client map key. Private JalNet APIs use Cognito. Routes are calculated through the backend. Package versions, model access and real integration behavior still need verification.
+Expo generates ignored `apps/mobile/android`. A cold native build downloads substantial Gradle/NDK artifacts. The native debug APK built, installed and ran in the emulator. Camera capture/upload, draft recovery, simulated foreground GPS and offline cache were exercised; see the implementation report for exact scope. The user approved emulator testing now and physical-phone tests later.
 
-## Implementation and verification
+To exercise the local loop: seed the corridor, tap a nearby map pin, capture a JPEG, upload privately, manually choose category/severity, confirm still-active and public-road consent, then submit. View the incident, route warning and provisional points. A second distinct local identity can contribute different evidence through the API tests; copied evidence and self-corroboration are rejected. Do not describe this as real independent witness evidence.
 
-After START, prove the risky dependencies first: development build on the target phone, map, foreground location, authenticated API, DynamoDB write/read, private phone-to-S3 upload, live Nova image assessment and real route calculation. Then implement the core in phases and run appropriate formatting, lint, typecheck, tests, infrastructure synth and device checks at each milestone.
+Stop the server before resetting:
 
-There are currently no install, run, build, deploy, seed or reset commands. Those commands will be documented after they exist and have actually been executed. Markdown validation verifies only these planning artifacts; it does not establish product completion.
+```sh
+pnpm demo:reset
+pnpm demo:seed
+pnpm local:server
+```
 
-## Scope and disclosures
+Seed/reset refuse to run while the localhost server is listening. Reset deletes only `.local-data`; no AWS deletion path exists. With a clean seeded server, run `pnpm smoke:local` to execute the explicitly fixture-based HTTP loop.
 
-Water Stress, My Water, TankerOS, IoT, official-source ingestion, video, push, alternative routing, HeatSafe and background route learning remain deferred until P0 is reliable. Any future simulated tank data, demo suppliers or seeded incidents must be visibly labeled. The P0 map, upload, analysis, fusion, persistence and route logic must remain real.
+## Local checks
 
-No credentials, private report media, real user routes, supplier integrations or production datasets are included. A prototype media-retention policy must be defined before storing real evidence. See the plan and decisions for privacy boundaries and uncertainty wording.
+```sh
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm synth
+pnpm test
+pnpm mobile:bundle
+```
 
-## Hackathon and acknowledgements
+Infrastructure tests inspect the actual `cdk.out/JalNetDev.template.json`, so synth precedes tests. CI runs the same local checks without AWS credentials or deployment permissions. SDK-mocked tests verify adapter behavior only. No live integration is inferred from a passed test or synthesized template.
 
-Target: WeMakeDevs × AWS Environmental Hacks, Heat and Water track, October 8–11, 2026. Exact kickoff/deadline hours must be checked against the [official schedule](https://www.wemakedevs.org/aws/env/schedule). The [official rules](https://www.wemakedevs.org/aws/env/rules) govern eligibility, build timing and submission.
+## AWS readiness, after SSO
 
-The source specification was supplied by the project owner. OpenAI Codex assisted with specification review, the workspace audit, planning documents and repository preparation. No application code has been generated. An open-source license has not yet been selected; licensing and dependency/data attribution remain TODO items.
+The intended architecture is preserved: Cognito-protected API Gateway, separate TypeScript Lambda services, DynamoDB/H3, encrypted private S3, SQS/DLQ, configurable Bedrock Nova and backend Amazon Location Routes. CDK TypeScript is the only infrastructure framework.
+
+Do not paste or create credentials. After the existing local SSO profile is available, configure real deployment values privately. Deployment needs actual allowed model/profile ARNs (`BedrockInvokeArns`) and an image-capable Nova model/profile ID (`BedrockModelId`); there is no fabricated ARN/model default. Verify processing geography, IAM and model access before private-image use. Bootstrap/deploy have **not** run.
+
+```sh
+# Run only after SSO readiness and actual deployment/configuration:
+AWS_PROFILE=jalnet AWS_REGION=ap-south-1 pnpm smoke:aws --live --image /absolute/path/to/captured.jpg
+```
+
+Without `--live`, smoke reports BLOCKED_AWAITING_SSO and exits nonzero without accessing AWS. The live command validates identity, DynamoDB write/read, private presigned S3 upload, Nova structured output and real route geometry. Deployed API/Cognito/SQS and native Amazon map assets require separate Phase 0 evidence; the script does not claim full P0 success.
+
+For the cloud mobile build, set `EXPO_PUBLIC_PROVIDER_MODE=aws`, actual API URL, Cognito client/domain and the restricted expiring maps-only key. Blank/missing cloud configuration stays blocked. Cloud Lambda never accepts demo tokens or falls back to local storage. Tokens use SecureStore; no AWS secret key belongs in Expo configuration. `.env.example` documents configuration names; populated `.env` files are ignored. Expo reads mobile environment configuration from `apps/mobile/.env` or the launching shell, not automatically from the repository-root example. Keep server-only resource values out of public mobile configuration.
+
+## Scope, safety and acknowledgements
+
+Water Stress, My Water, TankerOS, IoT, video, push, alternative routes, HeatSafe and background route learning remain deferred until P0 is stable. AI cannot establish exact depth, flow, contamination, ownership or guaranteed road safety. Public incident cards exclude contributor IDs/private evidence; private-property reports do not appear publicly. The prototype raw-evidence lifecycle is 14 days, awaiting deployment verification.
+
+Target: WeMakeDevs × AWS Environmental Hacks, Heat and Water track, October 8–11, 2026. Verify exact submission hours from the [official schedule](https://www.wemakedevs.org/aws/env/schedule) and [rules](https://www.wemakedevs.org/aws/env/rules).
+
+The owner supplied the specification. OpenAI Codex assisted with planning, repository setup, application/backend/infrastructure code and tests. Expo's generated starter license is retained in [apps/mobile/LICENSE](apps/mobile/LICENSE); a project-wide open-source license has not been selected. Dependency and map-source attribution remains required. Aryanxp1 has write access; shubhrgunjan’s write invitation remains pending acceptance.

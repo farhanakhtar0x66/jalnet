@@ -1,6 +1,6 @@
 # JalNet TODO
 
-This checklist tracks work order. The [implementation status matrix](docs/IMPLEMENTATION_STATUS.md) is the detailed verification record, and the [implementation plan](JalNet_Implementation_Plan.md) remains the product specification. A checked planning item does not mean a product feature works.
+This checklist tracks work order. The [implementation status matrix](docs/IMPLEMENTATION_STATUS.md) is the detailed verification record, and the [implementation plan](JalNet_Implementation_Plan.md) remains the product specification. Checked implementation items describe authored code, not live acceptance. AWS-dependent proof remains BLOCKED_AWAITING_SSO.
 
 ## Planning and repository preparation
 
@@ -12,21 +12,21 @@ This checklist tracks work order. The [implementation status matrix](docs/IMPLEM
 - [x] Publish the planning commit to the owner's private GitHub `jalnet` repository and verify its contents.
 - [x] Make the repository public following the owner's subsequent explicit authorization.
 - [x] Send write-access collaborator invitations to `Aryanxp1` and `shubhrgunjan` and verify their permissions.
-- [ ] Team members accept their GitHub collaborator invitations.
+- [ ] shubhrgunjan accepts the remaining invitation (Aryanxp1 write access is active).
 
 ## Authorization and readiness
 
-- [ ] Receive explicit START and confirm official project-clock permission.
+- [x] Receive explicit START authorizing application implementation.
 - [ ] Confirm organizer check-in/eligibility and exact submission deadline.
-- [ ] Verify the intended AWS account/session, deployment permissions and cost controls.
-- [ ] Make the physical Android demo phone available.
-- [ ] Resolve the compiler-capable JDK and Android tool configuration.
-- [ ] Verify and pin compatible Node, package manager, Expo, React Native and MapLibre versions.
+- [ ] AWS BLOCKED_AWAITING_SSO: intended profile jalnet / ap-south-1; live account, deployment permissions and cost checks pending.
+- [x] User approved emulator testing now; physical Android demo phone remains deferred.
+- [x] Configure JDK17 and Android36; native Gradle build/install and emulator runtime passed.
+- [x] Pin Node24/pnpm10/Expo57/RN0.86/MapLibre11; typecheck, JS bundle and native MapLibre emulator runtime pass.
 - [ ] Choose an open-source license and record attribution requirements.
 
 ## Phase 0 — Prove risky integrations
 
-- [ ] Create only the minimum application workspace/contracts needed for the proof.
+- [x] Create only the minimum application workspace/contracts needed for the proof. (Local implementation; acceptance tracked in matrix.)
 - [ ] Install and start an Expo development build on the target phone.
 - [ ] Render real Amazon Location maps through MapLibre, including all assets and attribution.
 - [ ] Test foreground location and chosen-area fallback after permission denial.
@@ -39,61 +39,61 @@ This checklist tracks work order. The [implementation status matrix](docs/IMPLEM
 
 ## Phase 1 — Application foundation
 
-- [ ] Initialize the application package workspace and shared strict Zod contracts.
-- [ ] Establish pure domain/geo functions and provider/repository interfaces.
-- [ ] Create CDK TypeScript core infrastructure with least-privilege roles.
-- [ ] Build map-first navigation, center capture action and working layer controls.
-- [ ] Separate TanStack Query server state from Zustand UI state.
-- [ ] Establish configuration examples, canonical errors and redacted observability.
+- [x] Initialize the application package workspace and shared strict Zod contracts. (Local implementation; acceptance tracked in matrix.)
+- [x] Establish pure domain/geo functions and provider/repository interfaces. (Local implementation; acceptance tracked in matrix.)
+- [x] Create CDK TypeScript core infrastructure with least-privilege roles. (Local implementation; acceptance tracked in matrix.)
+- [x] Build map-first navigation, center capture action and working layer controls. (Local implementation; acceptance tracked in matrix.)
+- [x] Separate TanStack Query server state from Zustand UI state. (Local implementation; acceptance tracked in matrix.)
+- [x] Establish configuration examples, canonical errors and redacted observability. (Local implementation; acceptance tracked in matrix.)
 
 ## Phase 2 — Events
 
-- [ ] Persist reports/events with distinct time, confidence, impact and severity semantics.
-- [ ] Implement bounded H3 viewport lookup with exact filtering and result caps.
-- [ ] Render clustered backend incidents with readable detail/provenance.
-- [ ] Create disclosed deterministic demo seeds and scoped reset behavior.
+- [x] Persist reports/events with distinct time, confidence, impact and severity semantics.
+- [x] Implement bounded H3 viewport lookup with exact filtering and result caps.
+- [x] Render clustered backend incidents with readable detail/provenance.
+- [x] Create disclosed deterministic demo seeds and scoped reset behavior. (Local implementation; acceptance tracked in matrix.)
 
 ## Phase 3 — Reporting
 
-- [ ] Build real JPEG capture, compression, accuracy disclosure and editable incident pin.
-- [ ] Persist local drafts and implement owned short-lived upload requests.
-- [ ] Resolve upload-complete request semantics before implementing the analysis trigger.
-- [ ] Validate uploaded media and run async Nova assessment with strict schema checks.
-- [ ] Limit retry to one and preserve manual classification when analysis fails.
-- [ ] Require editable human confirmation before publication; guard every state transition.
+- [x] Build real JPEG capture, compression, accuracy disclosure and editable incident pin.
+- [x] Persist local drafts and implement owned short-lived upload requests.
+- [x] Resolve upload-complete request semantics before implementing the analysis trigger. (Local implementation; acceptance tracked in matrix.)
+- [x] Validate uploaded media and run async Nova assessment with strict schema checks.
+- [x] Limit retry to one and preserve manual classification when analysis fails.
+- [x] Require editable human confirmation before publication; guard every state transition.
 
 ## Phase 4 — Fusion and trust
 
-- [ ] Implement configurable neighboring-cell candidates and conservative fusion.
-- [ ] Define numeric severity/unknown mapping and robust aggregation.
-- [ ] Separate model confidence from system evidence and verification.
-- [ ] Support basic independent confirmation without self-verification.
+- [x] Implement configurable neighboring-cell candidates and conservative fusion.
+- [x] Define numeric severity/unknown mapping and robust aggregation.
+- [x] Separate model confidence from system evidence and verification.
+- [x] Support basic independent confirmation without self-verification.
 - [ ] Preserve contradictory observations, monitoring, resolution and expired history.
-- [ ] Make submission idempotent and refresh events, route risks and profile caches.
+- [x] Make submission idempotent and refresh events, route risks and profile caches.
 
 ## Phase 5 — Saved routes and warnings
 
-- [ ] Build manual origin/destination selection and backend route preview.
-- [ ] Persist private route geometry, corridor, name and alert preference.
-- [ ] Implement H3 corridor candidates plus exact event-to-segment intersection.
-- [ ] Show the affected route and actionable warning with truthful uncertainty wording.
-- [ ] Delete route geometry and cancel route warnings when the user removes it.
-- [ ] Keep Alternative unavailable until a functioning P1 flow exists.
+- [x] Build manual origin/destination selection and backend route preview.
+- [x] Persist private route geometry, corridor, name and alert preference.
+- [x] Implement H3 corridor candidates plus exact event-to-segment intersection.
+- [x] Show local saved-route geometry and actual warning with uncertainty. Approximate category-policy area authored; AWS proof pending.
+- [x] Delete route geometry and cancel route warnings when the user removes it.
+- [x] Keep Alternative unavailable until a functioning P1 flow exists.
 
 ## Phase 6 — Droplets
 
-- [ ] Define relevant/provisional versus verified/usefulness eligibility and caps.
-- [ ] Implement immutable ledger entries with an atomic idempotency guard.
-- [ ] Test replay/concurrency, duplicate farming, self-confirmation and reversals.
-- [ ] Update profile impact from actual accepted contributions; keep cosmetic rank separate from trust.
+- [x] Define relevant/provisional versus verified/usefulness eligibility and caps.
+- [x] Implement immutable ledger entries with an atomic idempotency guard. (Local implementation; acceptance tracked in matrix.)
+- [x] Test local replay/concurrency, copied-media farming, self-confirmation and immutable reversal primitive. Review-authorized reversal workflow pending.
+- [x] Implement ledger-derived profile and contribution history; no invented impact metrics. Route-impact reward/count remains incomplete.
 
 ## Phase 7 — Reliability and P0 acceptance
 
-- [ ] Verify empty/loading/error/stale/offline behavior and durable draft recovery.
+- [x] Exercise native local draft recovery and dated offline cache; broader failure/device matrix pending.
 - [ ] Measure target-device launch/map/camera performance and viewport API/payload budgets.
 - [ ] Check accessibility, English copy keys, uncertainty and provenance.
-- [ ] Run formatter, lint, typecheck, unit/contract/integration tests, CDK synth and relevant builds.
-- [ ] Configure CI without broad pull-request deployment credentials.
+- [x] Run formatter, lint, typecheck, unit/contract/integration tests, CDK synth and relevant builds.
+- [x] Configure CI without broad pull-request deployment credentials. (Local implementation; acceptance tracked in matrix.)
 - [ ] Complete the physical-device permission/network/AI/duplicate/layers/route test matrix.
 - [ ] Reset and execute the real critical path five consecutive times.
 - [ ] Compare every P0 requirement with actual evidence before declaring completion.
@@ -101,10 +101,10 @@ This checklist tracks work order. The [implementation status matrix](docs/IMPLEM
 
 ## Submission
 
-- [ ] Update README with executed development/deployment/test/demo commands and real limitations.
-- [ ] Add architecture, privacy, sources and demo-script documentation.
-- [ ] Review tracked files and recordings for secrets/private data.
-- [ ] Disclose seeded/simulated behavior and all AI coding tools used.
+- [x] Update README with executed development/deployment/test/demo commands and real limitations.
+- [x] Add architecture, privacy, sources and demo-script documentation.
+- [x] Review tracked files and recordings for secrets/private data.
+- [x] Disclose seeded/simulated behavior and all AI coding tools used.
 - [ ] Record a video under three minutes that shows the core loop and AWS.
 - [ ] Test public repository and YouTube access in a signed-out browser.
 - [x] Obtain explicit authorization and change the repository from private to public.

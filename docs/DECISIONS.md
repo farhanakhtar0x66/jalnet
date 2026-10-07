@@ -92,3 +92,55 @@ These checks establish documented capabilities, not account access, deployment s
 Nova global inference does not promise processing only inside Mumbai. Verify the actual configured profile's processing geography and IAM requirements before sending real private media; do not imply India-only residency. No SDK method, model selection, or successful integration is inferred from a documentation table.
 
 Future verification work after START: compatible Expo/React Native/MapLibre versions; Node/JDK/Gradle/Android toolchains; Location native asset authentication and attribution; routes geometry precision/encoding; AWS SDK v3 and CDK constructs; Cognito token/authorizer flow; presign plus post-upload inspection; DynamoDB concurrency/transactions; H3 cell coverage at route/bbox edges; Nova media limits/profile access/retry/latency. Official external-data endpoint/terms/freshness verification stays deferred with P1.
+
+## Implementation decisions after explicit START
+
+### D-12 — Completion signal on the specified report route
+
+U-01 is resolved using POST `/v1/reports` with a strict action discriminator: DRAFT creates an owned private draft; UPLOAD_COMPLETE references only that report ID. The server chooses all object keys, validates the actual owned bytes and queues analysis. The listed `/v1/uploads/presign` and per-route `/v1/routes/{routeId}/risk` paths are retained. No image bytes enter API Gateway.
+
+### D-13 — Temporary LOCAL/DEMO providers, by explicit user instruction
+
+The user's SSO-delay instruction supersedes the original prohibition on replacing live core proof with demos for continued development. This authorizes explicit local adapters, not a live-proof claim or architecture switch. File persistence, private localhost upload grants, uncertain/manual assessment and straight-line route geometry implement the same interfaces as AWS. Runtime labels disclose the mode. Cloud services never select those providers. `jalnet`, `ap-south-1`, BLOCKED_AWAITING_SSO are the agreed profile, region and blocker.
+
+### D-14 — Toolchain and strict version pins
+
+Official Expo SDK57 template and compatibility docs supplied RN0.86.3/React19.2.3/TypeScript6.0.3; MapLibre11.5 requires the new native architecture. Selected Node24.21.0/pnpm10.34.6/JDK17 and Android36. Native projects are generated/ignored; app.json remains the source. Metro consumes TS-source workspace packages, so their internal TS import uses `.ts` with no-emit typecheck enabled. The official installed API37.1 phone emulator is a temporary test device, not physical-phone evidence.
+
+### D-15 — Concrete prototype policies
+
+LOW→1, MODERATE→2, HIGH→4, CRITICAL→5, UNKNOWN→null; citizens manually submit severity1–4, so AI cannot publish critical status. Type-specific merge/radius/expiry windows are centralized in domain policy; lower median aggregation avoids a single outlier escalation. System confidence starts0.55 and two distinct photo contributors raise it to0.7 with basic corroboration0.6, independent of model confidence. These are prototype thresholds, not measured scientific probabilities. Votes alone earn no meaningful awards; one cleared witness sets MONITORING, two set RESOLVED. Public labels say community corroborated, not official verification.
+
+After accepted public-road human confirmation, provisional +2 is capped at10/day, with a conditional counter in the incident/report/ledger transaction. Two distinct supporting image reports allow +8 first-useful and +5 corroboration awards exactly once. Copied-image primary guards and repeated same-user incident contributions are rejected. No points accrue for raw upload/private-property reports. Drafts are capped at20/user/day. Broader trust/admin reversals and GPS-spoof resistance remain incomplete.
+
+### D-16 — Retention and physical key implementation
+
+Raw evidence expires after14days; incomplete multipart uploads after1day. Canonical event tables have no physical TTL; logical expiry preserves history. Public cards omit original photos entirely. DynamoDB uses four small tables with conventional `id` / `userId` key attributes rather than the illustrative prefixed PK/SK names in §9, retaining separate event/report/user-route/ledger domains and H3/user indexes. This is an explicit storage-detail deviation for simple typed queries, not a service/architecture change. Ledger guards are conditional primary keys, not GSI uniqueness.
+
+### D-17 — Current primary references
+
+Implementation consulted installed package types and official [Expo SDK reference](https://docs.expo.dev/versions/latest/), [MapLibre Expo setup](https://maplibre.org/maplibre-react-native/docs/setup/expo/), [Converse](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html), [Nova schema](https://docs.aws.amazon.com/nova/latest/nova2-userguide/request-response-schema.html), [Location map keys](https://docs.aws.amazon.com/location/latest/developerguide/using-apikeys.html), [Routes V2](https://docs.aws.amazon.com/location/latest/APIReference/API_CalculateRoutes.html) and [CDK JWT authorizer](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_apigatewayv2_authorizers.HttpUserPoolAuthorizer.html). Documentation and types establish API shapes, not access or live success.
+
+### D-18 — Local continuity while SSO is unavailable
+
+The user explicitly set AWS state to BLOCKED_AWAITING_SSO, profile jalnet, region ap-south-1, and approved emulator testing. Retain the planned AWS stack and continue LOCAL/DEMO providers behind the same interfaces; no LocalStack, static credentials or successful-looking AWS fixtures. The emulator uses simulated camera/GPS, and local analysis intentionally produces uncertainty/manual entry. None is live AWS acceptance.
+
+### D-19 — Bounded retries, queries and owner-scoped caching
+
+Prototype policies: 20 drafts/user/day; five upload grants/report and 100/user/day; 30 route provider attempts/user/day; five-minute, maximum 200-entry warm-process owner-scoped route cache. Failed provider attempts consume quota. Upload retries reuse the owned random key. H3 queries have 512-cell/eight-concurrency/100-record page/five-page/1,000-candidate caps; fail on overflow instead of silently skipping a crowded cell. Filter/rank public current events before the 200-card response cap. These are engineering bounds, not measured live quotas or budget proof.
+
+Offline SQLite cache lasts 24 hours and is token-hash scoped. Only errors raised at the fetch transport boundary allow fallback, because Android native fetch uses Error rather than browser TypeError. Cached conditions are explicitly dated and never represented as current route safety. The emulator restart test exposed and verified this fix. A working retry action refreshes API queries after connectivity returns.
+
+### D-20 — Atomic final confirmation and evidence continuity
+
+Confirmation logically traverses SUBMITTED and atomically persists ACCEPTED/MERGED together with incident/ledger updates; storing an intermediate submitted state would introduce an unnecessary partial-commit boundary. Report observedAt/submittedAt capture the human confirmation time. SHA-256 is checked again before model assessment and human publication to reject evidence changed after completion. Live S3 presign replay/version and asynchronous duplicate-delivery tests remain pending; no claim of fully immutable object storage is made.
+
+### D-21 — Scoped Routes ARN and foreground acquisition
+
+Routes V2 provider ARN has an empty account component: arn:${Partition}:geo-routes:${Region}::provider/default. CDK now emits this exact shape and tests reject an account-bearing route ARN. Reference: [AWS geo-routes authorization](https://docs.aws.amazon.com/service-authorization/latest/reference/list_geo-routes.html). DynamoDB roles grant only actual service GetItem/PutItem/Query/DeleteItem actions; only the report API can write private S3 evidence, and the worker can read it.
+
+Foreground location uses an explicitly removed watch with a 15-second timeout instead of an unbounded location request; no background task is added. The emulator returned the deliberately simulated Delhi coordinate with approximately 5 m accuracy. Reference: [Expo Location](https://docs.expo.dev/versions/latest/sdk/location/). Native capture returned a resized 1,280×1,102 JPEG of 14,020 bytes without EXIF; its black/timestamp emulator image is not a real water issue.
+
+### D-22 — Analysis lease prevents parallel model attempts
+
+Acquire a conditional 90-second report analysis lease in the ledger guard namespace while atomically checking ANALYZING status. It exceeds the 60-second worker deadline and expires before the six-minute SQS visibility retry. A busy duplicate returns a retryable failure; completed reports return without another invocation. This is implemented/tested with local concurrent workers; actual SQS crash/redelivery/model-cost behavior remains IMPLEMENTED_UNVERIFIED until SSO testing.
