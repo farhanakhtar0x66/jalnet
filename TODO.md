@@ -93,7 +93,7 @@ This checklist tracks work order. The [implementation status matrix](docs/IMPLEM
 - [ ] Measure target-device launch/map/camera performance and viewport API/payload budgets.
 - [ ] Check accessibility, English copy keys, uncertainty and provenance.
 - [x] Run formatter, lint, typecheck, unit/contract/integration tests, CDK synth and relevant builds.
-- [x] Configure CI without broad pull-request deployment credentials. (Local implementation; acceptance tracked in matrix.)
+- [x] Configure and execute GitHub CI without deployment credentials: frozen install/format/lint/types/synth/44 tests/Android bundle passed.
 - [ ] Complete the physical-device permission/network/AI/duplicate/layers/route test matrix.
 - [ ] Reset and execute the real critical path five consecutive times.
 - [ ] Compare every P0 requirement with actual evidence before declaring completion.

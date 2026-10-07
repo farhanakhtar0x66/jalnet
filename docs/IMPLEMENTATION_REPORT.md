@@ -39,7 +39,7 @@ Commands were run from the repository root with project-local Node24/pnpm10 on P
 | `pnpm smoke:local` on clean seeded localhost server | PASS | Generated JPEG → private localhost upload → manual confirmation → fusion → route warning → immutable awards → replay; explicit fixture identities. |
 | `pnpm smoke:aws` without `--live` | Expected exit2, BLOCKED_AWAITING_SSO | Guard exits before any AWS call. This is not a smoke-test pass. |
 | Source comparison / Git whitespace / credential-pattern review | PASS | Plan unchanged; authored diff clean; no key material or runtime/private artifacts in publication set. |
-| GitHub CI | Pending initial implementation publication | Update with the actual workflow result; authored workflow is not executed CI evidence. |
+| GitHub CI | PASS, checks job 42 seconds, commit `6bddc1c` | [Actual validation run](https://github.com/farhanakhtar0x66/jalnet/actions/runs/37702139384): frozen install, format, lint, types, synth, 44 tests and Android bundle all succeeded on Ubuntu. No AWS credentials/deployment. |
 
 Native build command used these local paths:
 
@@ -113,3 +113,5 @@ Local mobile uses emulator host `10.0.2.2:8787`. Capture near the saved corridor
 No credentials are requested. When the existing local SSO profile becomes available, use profile `jalnet` in `ap-south-1`, configure actual resources/model/profile ARNs privately, deploy and execute Phase0 tests. Cloud Lambda already selects AWS providers; mobile must explicitly select `aws` and use actual Cognito/API/map configuration. Run the guarded live provider smoke with an actual captured JPEG, then separately prove deployed JWT API/queue/native Amazon assets and the full live loop. Record each actual response and retain IMPLEMENTED_UNVERIFIED/BLOCKED until its acceptance evidence exists.
 
 Public repository: [farhanakhtar0x66/jalnet](https://github.com/farhanakhtar0x66/jalnet). Aryanxp1 write permission verified; shubhrgunjan write invitation pending. OpenAI Codex assistance is disclosed in README; the Expo starter license is retained, and a project-wide license remains undecided.
+
+Implementation commits were pushed to public main; remote SHA matched the local published SHA. CI verified the code on 6bddc1c; this evidence update changes documentation only.

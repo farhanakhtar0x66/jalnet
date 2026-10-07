@@ -51,7 +51,7 @@ pnpm test
 pnpm mobile:bundle
 ```
 
-Infrastructure tests inspect the actual `cdk.out/JalNetDev.template.json`, so synth precedes tests. CI runs the same local checks without AWS credentials or deployment permissions. SDK-mocked tests verify adapter behavior only. No live integration is inferred from a passed test or synthesized template.
+Infrastructure tests inspect the actual `cdk.out/JalNetDev.template.json`, so synth precedes tests. [GitHub CI](https://github.com/farhanakhtar0x66/jalnet/actions/runs/37702139384) passed the same local checks (44 tests) without AWS credentials or deployment permissions. SDK-mocked tests verify adapter behavior only. No live integration is inferred from a passed test or synthesized template.
 
 ## AWS readiness, after SSO
 
