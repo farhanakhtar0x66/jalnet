@@ -1,0 +1,243 @@
+import { resolve } from "node:path";
+import {
+  CfnOutput,
+  CfnParameter,
+  Duration,
+  RemovalPolicy,
+  Stack,
+  type StackProps,
+} from "aws-cdk-lib";
+import {
+  type CfnStage,
+  HttpApi,
+  HttpMethod,
+  HttpNoneAuthorizer,
+} from "aws-cdk-lib/aws-apigatewayv2";
+import { HttpUserPoolAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
+import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
+import * as cognito from "aws-cdk-lib/aws-cognito";
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
+import * as iam from "aws-cdk-lib/aws-iam";
+import * as lambda from "aws-cdk-lib/aws-lambda";
+import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
+import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import * as logs from "aws-cdk-lib/aws-logs";
+import * as s3 from "aws-cdk-lib/aws-s3";
+import * as sqs from "aws-cdk-lib/aws-sqs";
+import type { Construct } from "constructs";
+
+export class JalnetStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+    const modelId = new CfnParameter(this, "BedrockModelId", {
+      type: "String",
+      default: "",
+      description:
+        "Verified image-capable Nova model or inference profile ID; empty means manual fallback.",
+    });
+    const modelArns = new CfnParameter(this, "BedrockInvokeArns", {
+      type: "CommaDelimitedList",
+      description:
+        "Actual model/profile ARNs required by the selected profile. No wildcard default.",
+    });
+    const table = (name: string, partition: string, sort?: string) =>
+      new dynamodb.Table(this, name, {
+        partitionKey: { name: partition, type: dynamodb.AttributeType.STRING },
+        ...(sort
+          ? { sortKey: { name: sort, type: dynamodb.AttributeType.STRING } }
+          : {}),
+        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        encryption: dynamodb.TableEncryption.AWS_MANAGED,
+        pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
+        removalPolicy: RemovalPolicy.RETAIN,
+      });
+    const events = table("Events", "id");
+    events.addGlobalSecondaryIndex({
+      indexName: "ByH3",
+      partitionKey: { name: "h3R8", type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+    const reports = table("Reports", "id");
+    const users = table("Users", "userId", "id");
+    const ledger = table("DropletLedger", "id");
+    ledger.addGlobalSecondaryIndex({
+      indexName: "ByUser",
+      partitionKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "createdAt", type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+    const bucket = new s3.Bucket(this, "Evidence", {
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
+      removalPolicy: RemovalPolicy.RETAIN,
+      lifecycleRules: [
+        {
+          expiration: Duration.days(14),
+          abortIncompleteMultipartUploadAfter: Duration.days(1),
+        },
+      ],
+    });
+    const dead = new sqs.Queue(this, "AnalysisDLQ", {
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      retentionPeriod: Duration.days(7),
+    });
+    const queue = new sqs.Queue(this, "AnalysisQueue", {
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      visibilityTimeout: Duration.minutes(6),
+      deadLetterQueue: { queue: dead, maxReceiveCount: 3 },
+    });
+    const pool = new cognito.UserPool(this, "Citizens", {
+      selfSignUpEnabled: true,
+      signInAliases: { email: true },
+      autoVerify: { email: true },
+      passwordPolicy: {
+        minLength: 12,
+        requireLowercase: true,
+        requireUppercase: true,
+        requireDigits: true,
+        requireSymbols: true,
+      },
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+    const client = pool.addClient("Mobile", {
+      generateSecret: false,
+      oAuth: {
+        flows: { authorizationCodeGrant: true },
+        scopes: [
+          cognito.OAuthScope.OPENID,
+          cognito.OAuthScope.EMAIL,
+          cognito.OAuthScope.PROFILE,
+        ],
+        callbackUrls: ["jalnet://auth"],
+        logoutUrls: ["jalnet://signout"],
+      },
+      authFlows: { userSrp: true },
+      preventUserExistenceErrors: true,
+      accessTokenValidity: Duration.minutes(60),
+      idTokenValidity: Duration.minutes(60),
+    });
+    const domain = pool.addDomain("LoginDomain", {
+      cognitoDomain: { domainPrefix: `jalnet-${this.account}-${this.region}` },
+    });
+    new CfnOutput(this, "CognitoDomain", { value: domain.baseUrl() });
+    const environment = {
+      EVENTS_TABLE: events.tableName,
+      REPORTS_TABLE: reports.tableName,
+      USERS_TABLE: users.tableName,
+      DROPLET_LEDGER_TABLE: ledger.tableName,
+      EVIDENCE_BUCKET: bucket.bucketName,
+      MEDIA_QUEUE_URL: queue.queueUrl,
+      BEDROCK_MODEL_ID: modelId.valueAsString,
+    };
+    const fn = (name: string, entry: string, timeout = 30) =>
+      new NodejsFunction(this, name, {
+        entry: resolve(`services/aws/${entry}.ts`),
+        runtime: lambda.Runtime.NODEJS_24_X,
+        handler: "handler",
+        timeout: Duration.seconds(timeout),
+        memorySize: 256,
+        reservedConcurrentExecutions: 2,
+        environment,
+        logGroup: new logs.LogGroup(this, `${name}Logs`, {
+          retention: logs.RetentionDays.ONE_WEEK,
+        }),
+        bundling: {
+          target: "node24",
+          minify: true,
+          sourceMap: true,
+          externalModules: [],
+        },
+      });
+    const reportFn = fn("ReportsAPI", "reports");
+    reports.grantReadWriteData(reportFn);
+    events.grantReadWriteData(reportFn);
+    ledger.grantReadWriteData(reportFn);
+    bucket.grantPut(reportFn, "private/*");
+    bucket.grantRead(reportFn, "private/*");
+    queue.grantSendMessages(reportFn);
+    const eventFn = fn("EventsAPI", "events");
+    events.grantReadWriteData(eventFn);
+    const routeFn = fn("RoutesAPI", "routes");
+    users.grantReadWriteData(routeFn);
+    events.grantReadData(routeFn);
+    routeFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["geo-routes:CalculateRoutes"],
+        resources: [
+          this.formatArn({
+            service: "geo-routes",
+            resource: "provider",
+            resourceName: "default",
+          }),
+        ],
+      }),
+    );
+    const profileFn = fn("ProfileAPI", "profile");
+    ledger.grantReadData(profileFn);
+    const worker = fn("AnalyzeMedia", "worker", 60);
+    reports.grantReadWriteData(worker);
+    bucket.grantRead(worker, "private/*");
+    worker.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["bedrock:InvokeModel"],
+        resources: modelArns.valueAsList,
+      }),
+    );
+    worker.addEventSource(
+      new SqsEventSource(queue, {
+        batchSize: 1,
+        reportBatchItemFailures: true,
+      }),
+    );
+    const health = fn("Health", "health");
+    const api = new HttpApi(this, "API", {
+      defaultAuthorizer: new HttpUserPoolAuthorizer("CitizensAuth", pool, {
+        userPoolClients: [client],
+      }),
+    });
+    const add = (
+      path: string,
+      methods: HttpMethod[],
+      handler: NodejsFunction,
+    ) =>
+      api.addRoutes({
+        path,
+        methods,
+        integration: new HttpLambdaIntegration(
+          `${handler.node.id}${path}`,
+          handler,
+        ),
+      });
+    add("/v1/reports", [HttpMethod.POST], reportFn);
+    add("/v1/reports/{reportId}", [HttpMethod.GET], reportFn);
+    add("/v1/reports/{reportId}/confirm", [HttpMethod.POST], reportFn);
+    add("/v1/uploads/presign", [HttpMethod.POST], reportFn);
+    add("/v1/events", [HttpMethod.GET], eventFn);
+    add("/v1/events/{eventId}", [HttpMethod.GET], eventFn);
+    add("/v1/events/{eventId}/confirm", [HttpMethod.POST], eventFn);
+    add("/v1/events/{eventId}/resolve-request", [HttpMethod.POST], eventFn);
+    add("/v1/routes", [HttpMethod.GET, HttpMethod.POST], routeFn);
+    add("/v1/routes/preview", [HttpMethod.POST], routeFn);
+    add("/v1/routes/{routeId}/risk", [HttpMethod.GET], routeFn);
+    add("/v1/routes/{routeId}", [HttpMethod.DELETE], routeFn);
+    add("/v1/me", [HttpMethod.GET], profileFn);
+    api.addRoutes({
+      path: "/health",
+      methods: [HttpMethod.GET],
+      integration: new HttpLambdaIntegration("HealthIntegration", health),
+      authorizer: new HttpNoneAuthorizer(),
+    });
+    const stage = api.defaultStage?.node.defaultChild as CfnStage;
+    stage.defaultRouteSettings = {
+      throttlingBurstLimit: 10,
+      throttlingRateLimit: 5,
+    };
+    new CfnOutput(this, "ApiUrl", { value: api.apiEndpoint });
+    new CfnOutput(this, "UserPoolId", { value: pool.userPoolId });
+    new CfnOutput(this, "UserPoolClientId", { value: client.userPoolClientId });
+    for (const [name, value] of Object.entries(environment))
+      new CfnOutput(this, name, { value });
+  }
+}
