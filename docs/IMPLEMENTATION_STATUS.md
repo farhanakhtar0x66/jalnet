@@ -2,19 +2,21 @@
 
 Planning audit: 2026-10-08, Asia/Kolkata. Source: [JalNet_Implementation_Plan.md](../JalNet_Implementation_Plan.md) (5,679 lines, numbered sections 0–100, including the addendum after the end marker). Explicit user instructions govern authorization and workflow; the plan supplies project requirements.
 
-Application implementation has not been authorized. The initial audit created only the three planning documents. The user subsequently authorized a GitHub planning repository before START, including these documents, the unchanged source specification, README, TODO and `.gitignore`. The planning files have been published to the private [farhanakhtar0x66/jalnet repository](https://github.com/farhanakhtar0x66/jalnet), branch `main`, and the user explicitly chose to keep it private. No application code, dependency installation, project infrastructure, deployment or live AWS test has been created or performed. This publication exception does not open the implementation gate.
+Application implementation has not been authorized. The initial audit created only the three planning documents. The user subsequently authorized a GitHub planning repository before START, including these documents, the unchanged source specification, README, TODO and `.gitignore`. The planning files were initially published privately. Following the user's later explicit public-visibility instruction, [farhanakhtar0x66/jalnet](https://github.com/farhanakhtar0x66/jalnet) is now public on branch `main`, with write invitations sent to both specified team members. No application code, dependency installation, project infrastructure, deployment or live AWS test has been created or performed. Repository publication and collaboration do not open the implementation gate.
 
-## Repository publication evidence
+## Repository publication and access evidence
 
 - Initial planning commit: `dc26f9d31cd86dd59098fbb28b25f8fc92f1b7fe`.
 - `gh repo create farhanakhtar0x66/jalnet --private --description ... --source . --remote origin --push` succeeded; `main` tracks `origin/main`.
-- GitHub REST repository metadata returned `private: true`, `default_branch: main` and the expected owner/repository URL.
+- Initial GitHub REST repository metadata returned `private: true`, `default_branch: main` and the expected owner/repository URL.
 - GitHub REST commit SHA matched `git rev-parse HEAD` for the initial push. The recursive remote tree contained exactly the seven intended files; every blob SHA matched `git ls-tree -r HEAD`.
 - The supplied source plan was compared byte for byte with the original and remained unchanged. Local links, code fences, seven-file inventory, permitted status rows and a common credential-pattern scan passed.
 - `git diff --cached --check` passed for newly authored files. The unchanged source plan retains its original Markdown hard-break spaces and final blank line, which the all-file whitespace check flags; it was not rewritten merely to remove them.
-- The first proposed public create-and-push action was rejected by automatic approval review. No public repository was created; private creation succeeded, followed by the user's explicit private-visibility instruction.
+- The first proposed public create-and-push action was rejected by automatic approval review; private creation succeeded, followed by the user's temporary private-visibility instruction.
+- The user later explicitly authorized making the repository public and inviting the team. `gh repo edit farhanakhtar0x66/jalnet --visibility public --accept-visibility-change-consequences` succeeded; GitHub metadata returned `private: false` and `visibility: public`.
+- GitHub collaborator PUT requests and the subsequent invitations listing confirmed pending `write` invitations to `Aryanxp1` (invitation `336639451`) and `shubhrgunjan` (invitation `336639454`). Both accounts were verified before invitation. Acceptance is required to activate access.
 
-This is documentation/repository evidence only. The application workspace, license, public submission access and all live product proofs remain incomplete.
+This is documentation/repository evidence only. The application workspace, license, final submission review and all live product proofs remain incomplete.
 
 ## Initial audit evidence before repository publication
 
@@ -173,7 +175,7 @@ Verification entries distinguish existing planning/repository evidence from requ
 | P0-077 | Budget/request/log controls and feature kill switches | 50, 67, 68 | P0 | P0-004, P0-013, P0-030 | NOT_STARTED | Pending — configuration/quotas review; optional features removable without core failure |
 | P0-078 | Architecture freeze after phone/map/API/S3/AI/fusion/route/reset proofs | 100 | P0 | P0-076 | NOT_STARTED | Pending — evidence-backed freeze; no dependency major upgrades afterward |
 | P0-079 | README, architecture/privacy/source/demo docs and honest limitations | 62, 64, 65, 93 | P0 | P0-072, P0-075 | IN_PROGRESS | Planning README/source/status/TODO published; implementation, privacy and demo evidence docs pending |
-| P0-080 | Public repo, licenses, attribution and AI coding tool disclosure | 1, 48, 64, 93 | P0 | P0-001, P0-057, P0-079 | IN_PROGRESS | Private repository and planning AI attribution verified; public visibility explicitly deferred; license/submission review pending |
+| P0-080 | Public repo, licenses, attribution and AI coding tool disclosure | 1, 48, 64, 93 | P0 | P0-001, P0-057, P0-079 | IN_PROGRESS | Public repository metadata and planning AI attribution verified; team write invitations sent; license/submission review pending |
 | P0-081 | Sub-three-minute video showing live critical loop and AWS | 63, 69, 93 | P0 | P0-076, P0-079 | NOT_STARTED | Pending — measured video duration, signed-out YouTube link and visible AWS/data disclosure |
 | P0-082 | Final write-up/submission before verified official deadline | 1, 65, 93 | P0 | P0-080, P0-081; B-01 | NOT_STARTED | Pending — exact published deadline and submission receipt; no guessed schedule |
 
