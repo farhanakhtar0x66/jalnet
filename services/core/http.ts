@@ -11,6 +11,23 @@ export interface Request {
   query: Record<string, string | undefined>;
   body: unknown;
 }
+export function parseRequestBody(text: string) {
+  if (Buffer.byteLength(text) > 64_000)
+    throw new ApiFailure(
+      "VALIDATION_FAILED",
+      413,
+      "Request body exceeds the JSON limit",
+    );
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new ApiFailure(
+      "VALIDATION_FAILED",
+      400,
+      "Request body must be valid JSON",
+    );
+  }
+}
 export async function dispatch(
   app: Application,
   request: Request,
@@ -74,11 +91,7 @@ export async function dispatch(
   if (method === "POST" && path === "/v1/routes/preview") {
     const input = routePreviewRequestSchema.parse(body);
     return {
-      ...(await app.routeProvider.calculate(
-        input.origin,
-        input.destination,
-        input.travelMode,
-      )),
+      ...(await app.previewRoute(userId, input)),
       provenance: app.routeProvider.provenance,
     };
   }

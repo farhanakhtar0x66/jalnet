@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { encode } from "jpeg-js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   eventForObservation,
   fusionCandidate,
@@ -45,7 +45,12 @@ function fixture() {
     new LocalRoutes(),
     () => now,
   );
-  async function ready(userId: string, unique: number, location = point) {
+  async function ready(
+    userId: string,
+    unique: number,
+    location = point,
+    runAnalysis = true,
+  ) {
     const draft = await app.createReport(userId, {
       action: "DRAFT",
       capturedAt: now,
@@ -66,12 +71,43 @@ function fixture() {
     });
     files.set(url.url, new Uint8Array(bytes));
     await app.completeUpload(userId, draft.id);
-    await app.analyze(draft.id);
+    if (runAnalysis) await app.analyze(draft.id);
     return draft.id;
   }
   return { app, repository, ready, files };
 }
 describe("local report transaction", () => {
+  it("leases concurrent analysis so duplicate workers do not invoke the model twice", async () => {
+    const { app, ready } = fixture();
+    const id = await ready("alice", 1, point, false);
+    let release: (() => void) | undefined;
+    let started: (() => void) | undefined;
+    const running = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const assess = vi
+      .spyOn(app.analysis, "assess")
+      .mockImplementation(async (image) => {
+        started?.();
+        await gate;
+        return new LocalAnalysis().assess(image);
+      });
+    const first = app.analyze(id);
+    await running;
+    await expect(app.analyze(id)).rejects.toMatchObject({
+      code: "DEPENDENCY_UNAVAILABLE",
+    });
+    release?.();
+    await first;
+    await app.analyze(id);
+    expect(assess).toHaveBeenCalledOnce();
+    expect((await app.ownedReport("alice", id)).status).toBe(
+      "NEEDS_CONFIRMATION",
+    );
+  });
   it("publishes nothing and awards nothing before human confirmation", async () => {
     const { app, ready } = fixture();
     const id = await ready("alice", 1);
@@ -125,6 +161,18 @@ describe("local report transaction", () => {
       app.confirm("bob", await ready("bob", 1), observation),
     ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
   });
+  it("rejects evidence replaced after upload completion without publishing or rewarding", async () => {
+    const { app, ready, files } = fixture();
+    const id = await ready("alice", 1);
+    const key = (await app.ownedReport("alice", id)).media[0]?.s3Key;
+    if (!key) throw new Error("Fixture evidence missing");
+    files.set(key, new Uint8Array([1, 2, 3]));
+    await expect(app.confirm("alice", id, observation)).rejects.toMatchObject({
+      code: "REPORT_BAD_STATE",
+    });
+    expect(await app.events(bbox, "LIVE")).toEqual([]);
+    expect((await app.profile("alice")).droplets).toBe(0);
+  });
   it("intersects saved route and preserves owner boundaries", async () => {
     const { app, ready } = fixture();
     await app.saveRoute("bob", {
@@ -140,6 +188,24 @@ describe("local report transaction", () => {
   });
 });
 describe("conservative incident and geometry logic", () => {
+  it("filters private incidents before the public response cap", async () => {
+    const { app, repository } = fixture();
+    for (let i = 0; i < 205; i++)
+      await repository.commit({
+        event: eventForObservation(
+          randomUUID(),
+          { ...observation, publicRoad: false },
+          now,
+        ),
+        ledger: [],
+        guards: [],
+      });
+    const event = eventForObservation(randomUUID(), observation, now);
+    await repository.commit({ event, ledger: [], guards: [] });
+    expect((await app.events(bbox, "LIVE")).map((e) => e.id)).toEqual([
+      event.id,
+    ]);
+  });
   it("filters expiry without deleting history", () => {
     const event = eventForObservation(randomUUID(), observation, now);
     expect(isCurrent(event, now)).toBe(true);

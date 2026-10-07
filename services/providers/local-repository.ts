@@ -82,15 +82,13 @@ export class LocalRepository implements Repository {
   ]) {
     await this.tail;
     return structuredClone(
-      this.state.events
-        .filter(
-          (e) =>
-            e.location.lon >= west &&
-            e.location.lon <= east &&
-            e.location.lat >= south &&
-            e.location.lat <= north,
-        )
-        .slice(0, 200),
+      this.state.events.filter(
+        (e) =>
+          e.location.lon >= west &&
+          e.location.lon <= east &&
+          e.location.lat >= south &&
+          e.location.lat <= north,
+      ),
     );
   }
   async commit(change: Commit) {

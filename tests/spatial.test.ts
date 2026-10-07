@@ -1,8 +1,17 @@
 import { latLngToCell } from "h3-js";
 import { describe, expect, it } from "vitest";
 import { coveringCells, viewportCells } from "../packages/geo/src/coverage.js";
+import { distanceM, radiusRing } from "../packages/geo/src/index.js";
 
 describe("H3 candidate coverage", () => {
+  it("renders a closed approximate policy-radius area at the correct scale", () => {
+    const point = { lat: 28.6139, lon: 77.209 };
+    const ring = radiusRing(point, 60);
+    expect(ring).toHaveLength(33);
+    expect(ring[0]).toEqual(ring.at(-1));
+    for (const [lon, lat] of ring)
+      expect(distanceM(point, { lat, lon })).toBeCloseTo(60, 3);
+  });
   it("includes neighboring points and viewport edges", () => {
     const point = { lat: 28.6139, lon: 77.209 };
     const cells = coveringCells(point, 300);

@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import {
+  ArnFormat,
   CfnOutput,
   CfnParameter,
   Duration,
@@ -151,23 +152,41 @@ export class JalnetStack extends Stack {
         },
       });
     const reportFn = fn("ReportsAPI", "reports");
-    reports.grantReadWriteData(reportFn);
-    events.grantReadWriteData(reportFn);
-    ledger.grantReadWriteData(reportFn);
-    bucket.grantPut(reportFn, "private/*");
-    bucket.grantRead(reportFn, "private/*");
+    const grant = (
+      target: NodejsFunction,
+      table: dynamodb.Table,
+      actions: string[],
+    ) =>
+      target.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: actions.map((action) => `dynamodb:${action}`),
+          resources: [table.tableArn, `${table.tableArn}/index/*`],
+        }),
+      );
+    grant(reportFn, reports, ["GetItem", "PutItem"]);
+    grant(reportFn, events, ["GetItem", "PutItem", "Query"]);
+    grant(reportFn, ledger, ["GetItem", "PutItem", "Query"]);
+    reportFn.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["s3:PutObject", "s3:GetObject"],
+        resources: [bucket.arnForObjects("private/*")],
+      }),
+    );
     queue.grantSendMessages(reportFn);
     const eventFn = fn("EventsAPI", "events");
-    events.grantReadWriteData(eventFn);
+    grant(eventFn, events, ["GetItem", "PutItem", "Query"]);
     const routeFn = fn("RoutesAPI", "routes");
-    users.grantReadWriteData(routeFn);
-    events.grantReadData(routeFn);
+    grant(routeFn, users, ["Query", "PutItem", "DeleteItem"]);
+    grant(routeFn, events, ["Query"]);
+    grant(routeFn, ledger, ["GetItem", "PutItem"]);
     routeFn.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ["geo-routes:CalculateRoutes"],
         resources: [
           this.formatArn({
             service: "geo-routes",
+            account: "",
+            arnFormat: ArnFormat.SLASH_RESOURCE_NAME,
             resource: "provider",
             resourceName: "default",
           }),
@@ -175,10 +194,16 @@ export class JalnetStack extends Stack {
       }),
     );
     const profileFn = fn("ProfileAPI", "profile");
-    ledger.grantReadData(profileFn);
+    grant(profileFn, ledger, ["Query"]);
     const worker = fn("AnalyzeMedia", "worker", 60);
-    reports.grantReadWriteData(worker);
-    bucket.grantRead(worker, "private/*");
+    grant(worker, reports, ["GetItem", "PutItem"]);
+    grant(worker, ledger, ["GetItem", "PutItem"]);
+    worker.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ["s3:GetObject"],
+        resources: [bucket.arnForObjects("private/*")],
+      }),
+    );
     worker.addToRolePolicy(
       new iam.PolicyStatement({
         actions: ["bedrock:InvokeModel"],

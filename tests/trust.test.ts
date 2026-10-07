@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { eventForObservation } from "../packages/domain/src/incidents.js";
 import { Application } from "../services/core/application.js";
 import { LocalAnalysis, LocalRoutes } from "../services/providers/local.js";
@@ -127,5 +127,56 @@ describe("atomic eligibility guards", () => {
     ]);
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
     expect(results.filter((r) => r.status === "rejected")).toHaveLength(1);
+  });
+  it("bounds upload retries atomically and reuses the owned evidence key", async () => {
+    const { app } = fixture();
+    const draft = await app.createReport("alice", {
+      action: "DRAFT",
+      capturedAt: now,
+      location: { ...observation.location, source: "USER_PIN" },
+    });
+    const input = {
+      reportId: draft.id,
+      contentType: "image/jpeg",
+      contentLength: 100,
+    };
+    await app.presign("alice", input);
+    const key = (await app.ownedReport("alice", draft.id)).media[0]?.s3Key;
+    const results = await Promise.allSettled(
+      Array.from({ length: 6 }, () => app.presign("alice", input)),
+    );
+    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(4);
+    expect((await app.ownedReport("alice", draft.id)).media[0]?.s3Key).toBe(
+      key,
+    );
+    await expect(app.presign("bob", input)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+  });
+  it("caches route geometry by owner and bounds daily provider attempts", async () => {
+    const { app } = fixture();
+    const calculate = vi.spyOn(app.routeProvider, "calculate");
+    const input = {
+      origin: observation.location,
+      destination: { lat: 28.614, lon: 77.21 },
+      travelMode: "Car",
+    };
+    await app.previewRoute("alice", input);
+    await app.previewRoute("alice", input);
+    expect(calculate).toHaveBeenCalledTimes(1);
+    await app.previewRoute("bob", input);
+    expect(calculate).toHaveBeenCalledTimes(2);
+    for (let i = 0; i < 29; i++)
+      await app.previewRoute("alice", {
+        ...input,
+        destination: { lat: 28.614, lon: 77.211 + i * 0.0001 },
+      });
+    await expect(
+      app.previewRoute("alice", {
+        ...input,
+        destination: { lat: 28.615, lon: 77.22 },
+      }),
+    ).rejects.toMatchObject({ code: "RATE_LIMITED" });
+    expect(calculate).toHaveBeenCalledTimes(31);
   });
 });

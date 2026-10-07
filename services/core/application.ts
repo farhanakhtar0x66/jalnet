@@ -8,10 +8,12 @@ import {
   type WaterEvent,
 } from "../../packages/contracts/src/events.js";
 import {
+  coordinatesSchema,
   createReportRequestSchema,
   mediaAssessmentSchema,
   presignRequestSchema,
   type Report,
+  routePreviewRequestSchema,
 } from "../../packages/contracts/src/index.js";
 import {
   eventForObservation,
@@ -54,6 +56,10 @@ export function publicEvent(event: WaterEvent) {
   };
 }
 export class Application {
+  private readonly routeCache = new Map<
+    string,
+    { expires: number; result: Awaited<ReturnType<RouteProvider["calculate"]>> }
+  >();
   constructor(
     readonly repository: Repository,
     readonly evidence: EvidenceProvider,
@@ -107,25 +113,56 @@ export class Application {
   }
   async presign(userId: string, input: unknown) {
     const request = presignRequestSchema.parse(input);
-    const report = await this.ownedReport(userId, request.reportId);
-    if (!["DRAFT", "UPLOADING"].includes(report.status))
-      return fail("REPORT_BAD_STATE", 409, "Report no longer accepts uploads");
-    const key = `private/${userId}/${report.id}/${randomUUID()}.jpg`;
-    const next: Report = {
-      ...report,
-      status: "UPLOADING",
-      media: [{ kind: "IMAGE", s3Key: key }],
-      upload: {
-        contentLength: request.contentLength,
-        contentType: request.contentType,
-      },
-    };
-    if (!(await this.repository.putReport(next, report.status)))
-      return fail("REPORT_BAD_STATE", 409, "Report changed; retry");
-    return {
-      ...(await this.evidence.presign(key, request.contentLength)),
-      reportId: report.id,
-    };
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const report = await this.ownedReport(userId, request.reportId);
+      if (!["DRAFT", "UPLOADING"].includes(report.status))
+        return fail(
+          "REPORT_BAD_STATE",
+          409,
+          "Report no longer accepts uploads",
+        );
+      const reportGuard = `uploads:${report.id}`;
+      const dailyGuard = `uploads:${userId}:${this.clock().slice(0, 10)}`;
+      const [tries, daily] = await Promise.all([
+        this.repository.counter(reportGuard),
+        this.repository.counter(dailyGuard),
+      ]);
+      if (tries >= 5 || daily >= 100)
+        return fail("RATE_LIMITED", 429, "Private upload retry limit reached");
+      const key =
+        report.media[0]?.s3Key ??
+        `private/${userId}/${report.id}/${randomUUID()}.jpg`;
+      const next: Report = {
+        ...report,
+        status: "UPLOADING",
+        media: [{ kind: "IMAGE", s3Key: key }],
+        upload: {
+          contentLength: request.contentLength,
+          contentType: request.contentType,
+        },
+      };
+      if (
+        !(await this.repository.commit({
+          report: next,
+          expectedReportStatus: report.status,
+          ledger: [],
+          guards: [
+            { key: reportGuard, expected: tries, value: tries + 1 },
+            { key: dailyGuard, expected: daily, value: daily + 1 },
+          ],
+        }))
+      )
+        continue;
+      return {
+        ...(await this.evidence.presign(key, request.contentLength)),
+        reportId: report.id,
+      };
+    }
+    return fail(
+      "RATE_LIMITED",
+      429,
+      "Concurrent upload request; retry shortly",
+    );
   }
   async completeUpload(userId: string, id: string) {
     const report = await this.ownedReport(userId, id);
@@ -181,14 +218,48 @@ export class Application {
     return next;
   }
   async analyze(id: string) {
-    const report = await this.repository.getReport(id);
-    if (report?.status !== "ANALYZING" || !report.media[0]) return;
+    let report: Report | undefined;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const current = await this.repository.getReport(id);
+      if (current?.status !== "ANALYZING" || !current.media[0]) return;
+      const key = `analysis-lease:${id}`;
+      const lease = await this.repository.counter(key);
+      const now = Date.parse(this.clock());
+      if (lease > now)
+        throw new ApiFailure(
+          "DEPENDENCY_UNAVAILABLE",
+          503,
+          "Analysis is already in progress; retry later",
+        );
+      // Longer than the 60-second Lambda deadline; crashed holders expire before SQS retry.
+      if (
+        await this.repository.commit({
+          report: current,
+          expectedReportStatus: "ANALYZING",
+          ledger: [],
+          guards: [{ key, expected: lease, value: now + 90_000 }],
+        })
+      ) {
+        report = current;
+        break;
+      }
+    }
+    if (!report?.media[0])
+      throw new ApiFailure(
+        "DEPENDENCY_UNAVAILABLE",
+        503,
+        "Analysis lease changed; retry later",
+      );
     let assessment: Report["aiAssessment"];
     try {
+      const image = await this.evidence.read(report.media[0].s3Key);
+      if (
+        createHash("sha256").update(image).digest("hex") !==
+        report.media[0].sha256
+      )
+        throw new Error("Evidence changed after upload completion");
       assessment = mediaAssessmentSchema.parse(
-        await this.analysis.assess(
-          await this.evidence.read(report.media[0].s3Key),
-        ),
+        await this.analysis.assess(image),
       );
     } catch {
       /* Model/schema failure preserves the private draft for manual classification. */
@@ -212,6 +283,18 @@ export class Application {
           "REPORT_BAD_STATE",
           409,
           "Wait for analysis or manual fallback",
+        );
+      const evidence = report.media[0];
+      if (
+        !evidence?.sha256 ||
+        createHash("sha256")
+          .update(await this.evidence.read(evidence.s3Key))
+          .digest("hex") !== evidence.sha256
+      )
+        return fail(
+          "REPORT_BAD_STATE",
+          409,
+          "Evidence changed after upload. Capture a new private draft.",
         );
       if (distanceM(report.location, observation.location) > 1000)
         return fail(
@@ -319,6 +402,7 @@ export class Application {
         location: { ...observation.location, source: "USER_PIN" },
         status: previous ? "MERGED" : "ACCEPTED",
         submittedAt: now,
+        observedAt: now,
         mergedEventId: event.id,
         userConfirmation: {
           category: observation.category,
@@ -353,13 +437,19 @@ export class Application {
             (layer === "LEAKS" && e.type === "LEAK") ||
             (layer === "DRAINS" && e.type.startsWith("DRAIN_"))),
       )
+      .sort(
+        (a, b) =>
+          b.severity * b.confidence - a.severity * a.confidence ||
+          b.lastSeenAt.localeCompare(a.lastSeenAt),
+      )
+      .slice(0, 200)
       .map(publicEvent);
   }
   async vote(userId: string, id: string, input: unknown) {
     const vote = z
       .strictObject({
         action: z.enum(["CONFIRM", "CLEARED", "NOT_SURE"]),
-        location: z.strictObject({ lat: z.number(), lon: z.number() }),
+        location: coordinatesSchema,
         accuracyM: z.number().min(0).max(100),
         observedAt: z.iso.datetime(),
       })
@@ -424,11 +514,11 @@ export class Application {
     const request = savedRouteInputSchema.parse(input);
     if ((await this.repository.routes(userId)).length >= 5)
       return fail("RATE_LIMITED", 400, "At most five saved routes");
-    const result = await this.routeProvider.calculate(
-      request.origin,
-      request.destination,
-      request.travelMode,
-    );
+    const result = await this.previewRoute(userId, {
+      origin: request.origin,
+      destination: request.destination,
+      travelMode: request.travelMode,
+    });
     const xs = result.geometry.map((p) => p[0]);
     const ys = result.geometry.map((p) => p[1]);
     const route = {
@@ -448,6 +538,50 @@ export class Application {
     };
     await this.repository.saveRoute(route);
     return { route, provenance: this.routeProvider.provenance };
+  }
+  async previewRoute(userId: string, input: unknown) {
+    const request = routePreviewRequestSchema.parse(input);
+    const cacheKey = JSON.stringify([userId, request]);
+    const now = Date.parse(this.clock());
+    const cached = this.routeCache.get(cacheKey);
+    if (cached && cached.expires > now) return cached.result;
+    const key = `route-calculations:${userId}:${this.clock().slice(0, 10)}`;
+    let acquired = false;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const count = await this.repository.counter(key);
+      if (count >= 30)
+        return fail(
+          "RATE_LIMITED",
+          429,
+          "Daily route calculation limit reached",
+        );
+      if (
+        await this.repository.commit({
+          ledger: [],
+          guards: [{ key, expected: count, value: count + 1 }],
+        })
+      ) {
+        acquired = true;
+        break;
+      }
+    }
+    if (!acquired)
+      return fail(
+        "RATE_LIMITED",
+        429,
+        "Concurrent route request; retry shortly",
+      );
+    const result = await this.routeProvider.calculate(
+      request.origin,
+      request.destination,
+      request.travelMode,
+    );
+    for (const [key, entry] of this.routeCache)
+      if (entry.expires <= now) this.routeCache.delete(key);
+    if (this.routeCache.size >= 200)
+      this.routeCache.delete(this.routeCache.keys().next().value ?? "");
+    this.routeCache.set(cacheKey, { expires: now + 300_000, result });
+    return result;
   }
   async risks(userId: string) {
     return Promise.all(

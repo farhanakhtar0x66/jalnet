@@ -62,5 +62,14 @@ describe("synthesized security boundaries (LOCAL, not deployment evidence)", () 
     for (const statement of statements)
       if (JSON.stringify(statement.Action).includes("bedrock:InvokeModel"))
         expect(statement.Resource).toEqual({ Ref: "BedrockInvokeArns" });
+    const routePolicy = statements.find((s) =>
+      JSON.stringify(s.Action).includes("geo-routes:CalculateRoutes"),
+    );
+    const routeResource = JSON.stringify(routePolicy?.Resource);
+    expect(routeResource).toContain("geo-routes:");
+    expect(routeResource).toContain("::provider/default");
+    expect(routeResource).not.toContain("AWS::AccountId");
+    expect(text).not.toContain("dynamodb:DeleteTable");
+    expect(text).not.toContain("s3:DeleteObject");
   });
 });

@@ -4,6 +4,29 @@ export interface Point {
 }
 const earthRadiusM = 6_371_000;
 const radians = (degrees: number) => (degrees * Math.PI) / 180;
+export function radiusRing(point: Point, radiusM: number): [number, number][] {
+  const lat = radians(point.lat),
+    lon = radians(point.lon),
+    angular = radiusM / earthRadiusM;
+  const ring: [number, number][] = [];
+  for (let i = 0; i < 32; i++) {
+    const bearing = (2 * Math.PI * i) / 32;
+    const y = Math.asin(
+      Math.sin(lat) * Math.cos(angular) +
+        Math.cos(lat) * Math.sin(angular) * Math.cos(bearing),
+    );
+    const x =
+      lon +
+      Math.atan2(
+        Math.sin(bearing) * Math.sin(angular) * Math.cos(lat),
+        Math.cos(angular) - Math.sin(lat) * Math.sin(y),
+      );
+    ring.push([(((x * 180) / Math.PI + 540) % 360) - 180, (y * 180) / Math.PI]);
+  }
+  const first = ring[0];
+  if (first) ring.push([...first]);
+  return ring;
+}
 export function distanceM(a: Point, b: Point): number {
   const h =
     Math.sin(radians(b.lat - a.lat) / 2) ** 2 +

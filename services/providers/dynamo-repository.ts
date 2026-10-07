@@ -111,12 +111,17 @@ export class DynamoRepository implements Repository {
                 IndexName: "ByH3",
                 KeyConditionExpression: "h3R8 = :cell",
                 ExpressionAttributeValues: { ":cell": cell },
+                Limit: 100,
                 ...(cursor ? { ExclusiveStartKey: cursor } : {}),
               }),
             );
             for (const item of response.Items ?? []) {
               const event = eventSchema.parse(this.stripGeo(item));
               events.set(event.id, event);
+              if (events.size > 1000)
+                throw new Error(
+                  "Spatial candidates exceed bounded result budget",
+                );
             }
             cursor = response.LastEvaluatedKey;
             pages++;
@@ -134,15 +139,13 @@ export class DynamoRepository implements Repository {
   }
   async viewport(bbox: readonly [number, number, number, number]) {
     const [w, s, e, n] = bbox;
-    return (await this.cells(viewportCells(bbox)))
-      .filter(
-        (event) =>
-          event.location.lon >= w &&
-          event.location.lon <= e &&
-          event.location.lat >= s &&
-          event.location.lat <= n,
-      )
-      .slice(0, 200);
+    return (await this.cells(viewportCells(bbox))).filter(
+      (event) =>
+        event.location.lon >= w &&
+        event.location.lon <= e &&
+        event.location.lat >= s &&
+        event.location.lat <= n,
+    );
   }
   async counter(key: string) {
     const response = await this.client.send(

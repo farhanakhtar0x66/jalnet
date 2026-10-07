@@ -1,7 +1,7 @@
 import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
 import type { APIGatewayProxyEventV2WithJWTAuthorizer } from "aws-lambda";
 import { Application } from "../core/application.js";
-import { dispatch, errorResponse } from "../core/http.js";
+import { dispatch, errorResponse, parseRequestBody } from "../core/http.js";
 import { AmazonRoutes, NovaAnalysis, S3Evidence } from "../providers/aws.js";
 import { DynamoRepository } from "../providers/dynamo-repository.js";
 
@@ -48,7 +48,7 @@ export function makeHandler(prefixes: readonly string[]) {
           userId: typeof userId === "string" ? userId : "",
           query: event.queryStringParameters ?? {},
           body: event.body
-            ? JSON.parse(
+            ? parseRequestBody(
                 event.isBase64Encoded
                   ? Buffer.from(event.body, "base64").toString()
                   : event.body,
