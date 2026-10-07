@@ -1,0 +1,185 @@
+import { randomUUID } from "node:crypto";
+import { encode } from "jpeg-js";
+import { describe, expect, it } from "vitest";
+import {
+  eventForObservation,
+  fusionCandidate,
+  isCurrent,
+  routeRisk,
+} from "../packages/domain/src/incidents.js";
+import {
+  decodePolyline,
+  encodePolyline,
+  routeDistanceM,
+} from "../packages/geo/src/index.js";
+import { Application, publicEvent } from "../services/core/application.js";
+import type { EvidenceProvider } from "../services/core/ports.js";
+import { LocalAnalysis, LocalRoutes } from "../services/providers/local.js";
+import { LocalRepository } from "../services/providers/local-repository.js";
+
+const now = "2026-10-08T08:00:00.000Z";
+const point = { lat: 28.6139, lon: 77.209 };
+const observation = {
+  category: "WATERLOGGING" as const,
+  severity: 2 as const,
+  stillActive: true as const,
+  location: point,
+  publicRoad: true,
+};
+const bbox = [77.2, 28.6, 77.22, 28.63] as const;
+function fixture() {
+  const repository = new LocalRepository();
+  const files = new Map<string, Uint8Array>();
+  const evidence: EvidenceProvider = {
+    presign: async (key) => ({ url: key, expiresIn: 300 }),
+    read: async (key) => {
+      const bytes = files.get(key);
+      if (!bytes) throw new Error("Missing evidence");
+      return bytes;
+    },
+  };
+  const app = new Application(
+    repository,
+    evidence,
+    new LocalAnalysis(),
+    new LocalRoutes(),
+    () => now,
+  );
+  async function ready(userId: string, unique: number, location = point) {
+    const draft = await app.createReport(userId, {
+      action: "DRAFT",
+      capturedAt: now,
+      location: { ...location, source: "USER_PIN" },
+    });
+    const rgba = Buffer.alloc(8 * 8 * 4);
+    for (let i = 0; i < rgba.length; i += 4) {
+      rgba[i] = unique * 30;
+      rgba[i + 1] = 50;
+      rgba[i + 2] = 80;
+      rgba[i + 3] = 255;
+    }
+    const bytes = encode({ data: rgba, width: 8, height: 8 }, 90).data;
+    const url = await app.presign(userId, {
+      reportId: draft.id,
+      contentType: "image/jpeg",
+      contentLength: bytes.length,
+    });
+    files.set(url.url, new Uint8Array(bytes));
+    await app.completeUpload(userId, draft.id);
+    await app.analyze(draft.id);
+    return draft.id;
+  }
+  return { app, repository, ready, files };
+}
+describe("local report transaction", () => {
+  it("publishes nothing and awards nothing before human confirmation", async () => {
+    const { app, ready } = fixture();
+    const id = await ready("alice", 1);
+    expect((await app.ownedReport("alice", id)).analysisProvenance).toBe(
+      "LOCAL_DEMO",
+    );
+    expect(await app.events(bbox, "LIVE")).toEqual([]);
+    expect((await app.profile("alice")).droplets).toBe(0);
+  });
+  it("double/concurrent submit produces one linked event and award", async () => {
+    const { app, ready } = fixture();
+    const id = await ready("alice", 1);
+    const results = await Promise.all(
+      Array.from({ length: 10 }, () => app.confirm("alice", id, observation)),
+    );
+    expect(new Set(results.map((r) => r.eventId)).size).toBe(1);
+    expect(await app.events(bbox, "LIVE")).toHaveLength(1);
+    expect((await app.profile("alice")).droplets).toBe(2);
+  });
+  it("isolates ownership and private-property observations", async () => {
+    const { app, ready } = fixture();
+    const id = await ready("alice", 1);
+    await expect(app.ownedReport("bob", id)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await app.confirm("alice", id, { ...observation, publicRoad: false });
+    expect(await app.events(bbox, "LIVE")).toEqual([]);
+    expect((await app.profile("alice")).droplets).toBe(0);
+  });
+  it("independent evidence fuses and awards once; same-user farming fails", async () => {
+    const { app, ready } = fixture();
+    await app.confirm("alice", await ready("alice", 1), observation);
+    await expect(
+      app.confirm("alice", await ready("alice", 2), observation),
+    ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
+    const id = await ready("bob", 3);
+    await app.confirm("bob", id, observation);
+    await app.confirm("bob", id, observation);
+    const events = await app.events(bbox, "LIVE");
+    expect(events).toHaveLength(1);
+    expect(events[0]?.status).toBe("ACTIVE");
+    expect((await app.profile("alice")).droplets).toBe(10);
+    expect((await app.profile("bob")).droplets).toBe(7);
+    expect(JSON.stringify(events)).not.toContain("supporterIds");
+    expect(JSON.stringify(events)).not.toContain("mediaHashes");
+  });
+  it("rejects a copied evidence hash from a second identity", async () => {
+    const { app, ready } = fixture();
+    await app.confirm("alice", await ready("alice", 1), observation);
+    await expect(
+      app.confirm("bob", await ready("bob", 1), observation),
+    ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
+  });
+  it("intersects saved route and preserves owner boundaries", async () => {
+    const { app, ready } = fixture();
+    await app.saveRoute("bob", {
+      name: "Local test",
+      origin: { lat: point.lat, lon: 77.205 },
+      destination: { lat: point.lat, lon: 77.215 },
+      travelMode: "Car",
+      activeAlerts: true,
+    });
+    await app.confirm("alice", await ready("alice", 1), observation);
+    expect((await app.risks("bob"))[0]?.risks[0]?.warning).toBe(true);
+    expect(await app.risks("alice")).toEqual([]);
+  });
+});
+describe("conservative incident and geometry logic", () => {
+  it("filters expiry without deleting history", () => {
+    const event = eventForObservation(randomUUID(), observation, now);
+    expect(isCurrent(event, now)).toBe(true);
+    expect(isCurrent(event, "2026-10-09T08:00:00.000Z")).toBe(false);
+    expect(event.status).toBe("UNVERIFIED");
+  });
+  it("requires type and time proximity; ambiguous candidates remain separate", () => {
+    const first = eventForObservation(randomUUID(), observation, now);
+    const second = eventForObservation(randomUUID(), observation, now);
+    expect(fusionCandidate([first], observation, now)?.id).toBe(first.id);
+    expect(fusionCandidate([first, second], observation, now)).toBeUndefined();
+    expect(
+      fusionCandidate([first], { ...observation, category: "LEAK" }, now),
+    ).toBeUndefined();
+  });
+  it("matches the middle of a segment rather than only vertices", () => {
+    const points = [
+      [77.2, 28.6139],
+      [77.22, 28.6139],
+    ] as [number, number][];
+    expect(routeDistanceM(point, points)).toBeLessThan(1);
+    expect(decodePolyline(encodePolyline(points))).toEqual(points);
+    const event = eventForObservation(randomUUID(), observation, now);
+    const route = {
+      id: randomUUID(),
+      userId: "bob",
+      name: "route",
+      source: "MANUAL" as const,
+      polyline: encodePolyline(points),
+      bbox: [...bbox] as [number, number, number, number],
+      activeAlerts: true,
+      corridorWidthM: 30,
+    };
+    expect(routeRisk(route, event, now).warning).toBe(true);
+    expect(
+      routeRisk({ ...route, activeAlerts: false }, event, now).warning,
+    ).toBe(false);
+    expect(publicEvent(event).attributes).toEqual({ publicRoad: true });
+  });
+  it("rejects malformed polyline", () => {
+    expect(() => decodePolyline("~")).toThrow();
+  });
+});
