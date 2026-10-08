@@ -26,5 +26,6 @@ coverage/
 .gradle/
 .android/
 .local-data/
+.cutover/
 apps/mobile/android/
 apps/mobile/ios/

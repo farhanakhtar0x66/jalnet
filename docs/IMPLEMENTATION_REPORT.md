@@ -86,8 +86,8 @@ P0 remains incomplete. Important remaining work includes:
 - SSO-dependent Phase0 actual Cognito/API/Dynamo/S3/SQS/Nova/Location Maps/Routes smoke and end-to-end integration, IAM denial/quotas/retention/residency/cost verification.
 - Live SQS delivery/lease/model-cost proof, S3 signed-URL replay/version behavior, full contradictory-observation trust policy, transactionally strict concurrent saved-route cap, broader route-impact/usefulness awards and review-authorized reversals.
 - H3 GSI consistency can conservatively leave concurrent incidents separate; the ledger user GSI can lag balances. Warm route caches do not persist across cold starts. Long routes can exceed the bounded urban candidate budget.
-- Token refresh/revocation, user erasure, operational metrics/alarms, full marker freshness styling, central copy keys, accessibility and target-device performance are incomplete.
-- Cloud seed/reset must be scoped against actual deployment before implementation; five live rehearsals, architecture freeze, license choice, deadline verification and submission video/write-up remain pending.
+- Token refresh/revocation, user erasure, operational metrics/alarms, central copy keys, the full accessibility/physical performance matrix remain incomplete. Scoped freshness/provenance styling and basic accessible states are now implemented locally.
+- Cloud seed/reset must be scoped against actual deployment before implementation; five live rehearsals, architecture freeze, deadline verification and submission video/write-up remain pending. The user selected MIT licensing during cutover cleanup.
 
 P1/P2 stay deferred: Water Stress inputs/normalization, simulated tanks, demo tankers, official alerts, video, push, alternative routes, background learning, HeatSafe, advanced DrainScan, suppliers/payments/hardware/municipal/predictive systems.
 
@@ -112,6 +112,40 @@ Local mobile uses emulator host `10.0.2.2:8787`. Capture near the saved corridor
 
 No credentials are requested. When the existing local SSO profile becomes available, use profile `jalnet` in `ap-south-1`, configure actual resources/model/profile ARNs privately, deploy and execute Phase0 tests. Cloud Lambda already selects AWS providers; mobile must explicitly select `aws` and use actual Cognito/API/map configuration. Run the guarded live provider smoke with an actual captured JPEG, then separately prove deployed JWT API/queue/native Amazon assets and the full live loop. Record each actual response and retain IMPLEMENTED_UNVERIFIED/BLOCKED until its acceptance evidence exists.
 
-Public repository: [farhanakhtar0x66/jalnet](https://github.com/farhanakhtar0x66/jalnet). Aryanxp1 write permission verified; shubhrgunjan write invitation pending. OpenAI Codex assistance is disclosed in README; the Expo starter license is retained, and a project-wide license remains undecided.
+Public repository: [farhanakhtar0x66/jalnet](https://github.com/farhanakhtar0x66/jalnet). Aryanxp1 write permission verified; shubhrgunjan write invitation pending. OpenAI Codex assistance is disclosed in README; the Expo starter license is retained and the user selected the MIT project license.
 
-Implementation commits were pushed to public main; remote SHA matched the local published SHA. CI verified the code on 6bddc1c; this evidence update changes documentation only.
+The earlier implementation commits were pushed to public main; remote SHA matched the local published SHA. CI verified that earlier milestone on 6bddc1c; the following P0 cutover changes include implementation and tests, with their own gate evidence.
+
+## P0 AWS-cutover readiness changes
+
+No live AWS access or final demo recording occurred; P1/P2 remain frozen. Added AWS_CUTOVER_CHECKLIST.md (full boundary trace + IAM/config/payload/failure/tests/commands), AWS_DEPLOYMENT_RUNBOOK.md (first STS command, private target/role hard stop, scoped bootstrap policy, synth/diff/deploy/outputs/mobile/key/service sequence), and DEMO_READINESS.md (local reset/seed, dedicated-account expectations, three-minute shot list, live/simulated split, architecture frame and honest fallbacks).
+
+Server config now requires all live resource/model/Cognito values and rejects an absent region/model or inconsistent queue URL/ARN. Mobile AWS mode requires actual HTTPS deployed API, region/pool/client/domain and restricted key/resource/signing values; a copied local URL is rejected and invalid config renders a blocked screen. CDK has no empty model parameter default, constrains invocation ARN shape, emits operational outputs and dev tags. Review found CloudFormation's alphanumeric output IDs differ from underscored runtime names; normalization and a synthesized-artifact compatibility test fix that cutover bug.
+
+Live commands require `--live --profile jalnet` and a mode-600 private config with real expected account/SSO role/model/profile ARNs. Live smoke CLI and SDK identity checks must both match before writes; deployment binds the CLI-approved account/region and explicit CDK profile. Credential/endpoint overrides are rejected. Model/profile account/allowlist relationships are validated without fabricating values. Read-only dependency checks precede bounded provider or full HTTP workflow stages; capture directory/JPEG/hash/freshness/EXIF/file size are checked before upload. No cloud deletion, fixture seeding, queue purge, automatic status upgrade or final recording path exists. Native Android Maps restriction protocol/rendering is explicitly B-08, not guessed or weakened. Broad default managed Lambda logging permissions were replaced with each function's own precreated log-group write grant and asserted in the synthesized IAM test.
+
+Fixed missing authorizer context returning 503 instead of 401; raw JWT-shaped headers cannot supply identity. Added bounded Nova backoff, S3 content-length checks and upload/queue timeouts. Stale/future captures are rejected at draft/upload/confirmation boundaries, while accepted-report replay remains idempotent. A completion that committed before scheduling failure can be retried against the same report, with bounded mobile polling and worker lease protection. Already submitted drafts have an explicit local cleanup action.
+
+Private draft/cache scope is obtained from the authenticated `/v1/me` response during PKCE; no locally decoded JWT chooses ownership. Token, expiry and account scope are stored as one SecureStore session value. Draft/cache requests bind that scope, and in-flight account changes cannot clear another account's draft. Legacy unscoped drafts remain privately retained and unassigned, not silently migrated into a live identity. Actual Cognito/account-switch acceptance remains blocked; this design is not a cryptographic AWS proof.
+
+P0 UI cleanup includes recent/aging/source/expiry labels, dimmed aging markers, status-correct verification copy, client-side expiry filtering, stale route-check warning suppression/refresh, loading/empty/error states, explicit AI-draft uncertainty, accessible selected/category/severity states and minimum touch targets. The capture path now requires an explicitly chosen map pin or foreground fix. MIT added at the user's request; attribution obligations retained.
+
+Review additionally found that two different access tokens might belong to one account. The live workflow now compares two authenticated `/v1/me` subjects before any application write. The shared Maps metadata guard rejects malformed/expired expiry and additional unapproved Android/web/Apple callers. Read-only dependency staging now includes one IAM-authenticated Maps style descriptor, retained privately and bounded to 2 MB; this is a future service probe, not native key acceptance or executed AWS evidence.
+
+## Current cutover local gate — 2026-10-08
+
+The commands below actually executed after the final guard fixes, using the pinned workspace Node/pnpm on PATH. No `--live` command, credential probe, deployment or AWS SDK/service invocation occurred.
+
+| Command | Actual result / scope |
+|---|---|
+| `pnpm format:check` | PASS, 64 files; no formatting changes required. |
+| `pnpm lint` | PASS, 64 files; no lint fixes required. |
+| `pnpm typecheck` | PASS, root and mobile TypeScript. |
+| `pnpm synth` | PASS, credential-free CloudFormation/assets; resource-scoped logging/IAM and output compatibility checked locally. |
+| `pnpm test` | PASS: **10 suites, 71 tests; 27 added** to the 44-test local milestone. Includes malformed key expiry/caller restrictions and same-subject live-account guards. SDK mocks and local failure injection are not AWS evidence. |
+| `pnpm mobile:bundle` | PASS: Android Hermes export, 916 modules, 2.8 MB bundle. No new native APK build was needed or run for these JavaScript-only mobile changes. |
+| `pnpm demo:reset`, `pnpm demo:seed`, `pnpm local:server`, `pnpm smoke:local` | PASS after stopping the known JalNet server and reseeding. Actual localhost fixture upload → manual confirmation → fusion → warning → ledger 10/7 → replay. One initial reset was denied by the sandbox's localhost check; the smoke refused the retained old data. Retried reset/seed with localhost permission, then clean smoke passed. No cloud data changed. |
+| `pnpm smoke:aws` without flags | Expected exit 2: `BLOCKED_AWAITING_SSO`, explicit `--live` required; no AWS calls. Not counted as a live smoke pass. |
+| Source-plan comparison and `git diff --check` | PASS; original plan unchanged byte for byte, authored diff has no whitespace errors. |
+
+The updated emulator flow also rendered the account-scoped local camera capture/private upload and manual-confirmation screen, explicit LOCAL/DEMO/no-model copy, fresh/source/expiry incident card, and suppression/refresh of an outdated route check. The capture remained private in NEEDS_CONFIRMATION during this walkthrough. The earlier restart/offline/GPS evidence above belongs to the original milestone; those tests are not claimed as a new live or physical-device run. No final demo was recorded. P0 remains incomplete, with AWS-dependent work IMPLEMENTED_UNVERIFIED/BLOCKED_AWAITING_SSO.

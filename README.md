@@ -4,7 +4,7 @@ A map-first water intelligence prototype: capture an observation, upload evidenc
 
 Implementation has started. **Live AWS access is BLOCKED_AWAITING_SSO** until the intended `jalnet` profile becomes available in `ap-south-1`. LOCAL/DEMO providers let development continue; they never establish DynamoDB, S3, Nova, Cognito or Amazon Location verification. P0 is not complete.
 
-[Specification](JalNet_Implementation_Plan.md) · [Status](docs/IMPLEMENTATION_STATUS.md) · [Decisions](docs/DECISIONS.md) · [Blockers](docs/BLOCKERS.md) · [Architecture](docs/ARCHITECTURE.md) · [Privacy](docs/PRIVACY.md) · [Local implementation report](docs/IMPLEMENTATION_REPORT.md) · [Backlog](TODO.md)
+[Specification](JalNet_Implementation_Plan.md) · [Status](docs/IMPLEMENTATION_STATUS.md) · [Decisions](docs/DECISIONS.md) · [Blockers](docs/BLOCKERS.md) · [Architecture](docs/ARCHITECTURE.md) · [Privacy](docs/PRIVACY.md) · [Local implementation report](docs/IMPLEMENTATION_REPORT.md) · [Backlog](TODO.md) · [Cutover audit](docs/AWS_CUTOVER_CHECKLIST.md) · [Deployment runbook](docs/AWS_DEPLOYMENT_RUNBOOK.md) · [Demo readiness](docs/DEMO_READINESS.md)
 
 ## Development
 
@@ -49,9 +49,11 @@ pnpm typecheck
 pnpm synth
 pnpm test
 pnpm mobile:bundle
+# With a separate clean seeded local server:
+pnpm smoke:local
 ```
 
-Infrastructure tests inspect the actual `cdk.out/JalNetDev.template.json`, so synth precedes tests. [GitHub CI](https://github.com/farhanakhtar0x66/jalnet/actions/runs/37702139384) passed the same local checks (44 tests) without AWS credentials or deployment permissions. SDK-mocked tests verify adapter behavior only. No live integration is inferred from a passed test or synthesized template.
+Infrastructure tests inspect the actual `cdk.out/JalNetDev.template.json`, so synth precedes tests. The current cutover local gate passed **71 tests across 10 suites**; exact results are in the [implementation report](docs/IMPLEMENTATION_REPORT.md). Earlier [GitHub CI](https://github.com/farhanakhtar0x66/jalnet/actions/runs/37702139384) passed the original milestone checks (44 tests) without AWS credentials or deployment permissions. SDK-mocked tests verify adapter behavior only. No live integration is inferred from a passed test or synthesized template.
 
 ## AWS readiness, after SSO
 
@@ -60,13 +62,15 @@ The intended architecture is preserved: Cognito-protected API Gateway, separate 
 Do not paste or create credentials. After the existing local SSO profile is available, configure real deployment values privately. Deployment needs actual allowed model/profile ARNs (`BedrockInvokeArns`) and an image-capable Nova model/profile ID (`BedrockModelId`); there is no fabricated ARN/model default. Verify processing geography, IAM and model access before private-image use. Bootstrap/deploy have **not** run.
 
 ```sh
-# Run only after SSO readiness and actual deployment/configuration:
-AWS_PROFILE=jalnet AWS_REGION=ap-south-1 pnpm smoke:aws --live --image /absolute/path/to/captured.jpg
+# First command after real SSO becomes available; compare account/role privately:
+aws sts get-caller-identity --profile jalnet
+# Later, follow the guarded runbook with a real mode-600 private config:
+pnpm smoke:aws --live --profile jalnet --config "$JALNET_CUTOVER_CONFIG" --stage dependencies
 ```
 
-Without `--live`, smoke reports BLOCKED_AWAITING_SSO and exits nonzero without accessing AWS. The live command validates identity, DynamoDB write/read, private presigned S3 upload, Nova structured output and real route geometry. Deployed API/Cognito/SQS and native Amazon map assets require separate Phase 0 evidence; the script does not claim full P0 success.
+Without `--live`, smoke reports BLOCKED_AWAITING_SSO and exits nonzero without accessing AWS. An explicit jalnet profile and privately approved account/role are required; wrong targets stop. Read-only dependency probes precede bounded provider/workflow stages. The runbook specifies controlled captures/tokens, actual model access, native Maps restriction gates and limits. Scripts do not mark AWS VERIFIED or claim P0 success. Ordinary `pnpm deploy` is also guarded; unknown resources/models never receive fabricated deployment defaults.
 
-For the cloud mobile build, set `EXPO_PUBLIC_PROVIDER_MODE=aws`, actual API URL, Cognito client/domain and the restricted expiring maps-only key. Blank/missing cloud configuration stays blocked. Cloud Lambda never accepts demo tokens or falls back to local storage. Tokens use SecureStore; no AWS secret key belongs in Expo configuration. `.env.example` documents configuration names; populated `.env` files are ignored. Expo reads mobile environment configuration from `apps/mobile/.env` or the launching shell, not automatically from the repository-root example. Keep server-only resource values out of public mobile configuration.
+For the cloud mobile build, use the guarded environment helper in the runbook to write actual API/region/Cognito pool/client/domain and restricted expiring maps-only key/resource/signing values. Missing/invalid cloud configuration shows a blocked screen; localhost API URLs are rejected in AWS mode. Cloud Lambda requires trusted Gateway access-token claims and never accepts demo tokens or falls back to local storage. Tokens use SecureStore; no AWS secret key belongs in Expo configuration. `.env.example` documents configuration names; populated `.env` files and `.cutover/` are ignored. Expo reads mobile environment configuration from `apps/mobile/.env` or the launching shell, not automatically from the repository-root example. Keep server-only values out of public mobile configuration.
 
 ## Scope, safety and acknowledgements
 
@@ -74,4 +78,4 @@ Water Stress, My Water, TankerOS, IoT, video, push, alternative routes, HeatSafe
 
 Target: WeMakeDevs × AWS Environmental Hacks, Heat and Water track, October 8–11, 2026. Verify exact submission hours from the [official schedule](https://www.wemakedevs.org/aws/env/schedule) and [rules](https://www.wemakedevs.org/aws/env/rules).
 
-The owner supplied the specification. OpenAI Codex assisted with planning, repository setup, application/backend/infrastructure code and tests. Expo's generated starter license is retained in [apps/mobile/LICENSE](apps/mobile/LICENSE); a project-wide open-source license has not been selected. Dependency and map-source attribution remains required. Aryanxp1 has write access; shubhrgunjan’s write invitation remains pending acceptance.
+The owner supplied the specification. OpenAI Codex assisted with planning, repository setup, application/backend/infrastructure code and tests. The user selected the [MIT project license](LICENSE); Expo's generated starter license is retained in [apps/mobile/LICENSE](apps/mobile/LICENSE). Dependency and map-source attribution remains required. Aryanxp1 has write access; shubhrgunjan’s write invitation remains pending acceptance.

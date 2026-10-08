@@ -26,7 +26,7 @@ import {
   View,
 } from "react-native";
 import { z } from "zod";
-import { api, isLocal } from "./api";
+import { api, isLocal, mobileConfig } from "./api";
 import { Button } from "./Button";
 import { cachedApi } from "./cache";
 import { foregroundFix } from "./location";
@@ -35,16 +35,16 @@ import { SignIn } from "./SignIn";
 import { demoCenter, type Layer as LayerName, useUI } from "./ui";
 
 const layers: LayerName[] = ["LIVE", "FLOOD", "LEAKS", "DRAINS", "ROUTE_RISK"];
-const mapKey = process.env.EXPO_PUBLIC_LOCATION_MAP_KEY;
 // Official MapLibre demo basemap; no Amazon rendering verification implied.
 const mapStyle = isLocal
   ? "https://demotiles.maplibre.org/style.json"
-  : mapKey
-    ? `https://maps.geo.${process.env.EXPO_PUBLIC_AWS_REGION ?? "ap-south-1"}.amazonaws.com/v2/styles/Monochrome/descriptor?key=${encodeURIComponent(mapKey)}`
+  : mobileConfig?.mode === "aws"
+    ? `https://maps.geo.${mobileConfig.EXPO_PUBLIC_AWS_REGION}.amazonaws.com/v2/styles/Monochrome/descriptor?key=${encodeURIComponent(mobileConfig.EXPO_PUBLIC_LOCATION_MAP_KEY)}`
     : null;
 const publicSchema = eventSchema.extend({
   provenance: z.string(),
   verificationLabel: z.string(),
+  freshness: z.enum(["RECENT", "AGING", "EXPIRED"]),
 });
 const riskSchema = z.object({
   route: savedRouteSchema,
@@ -59,6 +59,11 @@ const riskSchema = z.object({
   ),
 });
 export function Home() {
+  const [displayTime, setDisplayTime] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setDisplayTime(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
   const camera = useRef<CameraRef>(null);
   const pin = useUI((s) => s.pin);
   const layer = useUI((s) => s.layer);
@@ -83,7 +88,18 @@ export function Home() {
         z.array(publicSchema),
       ),
   });
-  const events = { ...eventResult, data: eventResult.data?.value };
+  const events = {
+    ...eventResult,
+    data: eventResult.data?.value
+      .filter((event) => Date.parse(event.expiresAt) > displayTime)
+      .map((event) => ({
+        ...event,
+        freshness:
+          displayTime - Date.parse(event.lastSeenAt) > 3_600_000
+            ? ("AGING" as const)
+            : ("RECENT" as const),
+      })),
+  };
   const routeResult = useQuery({
     queryKey: ["routes"],
     queryFn: () => cachedApi("/v1/routes", z.array(savedRouteSchema)),
@@ -167,11 +183,13 @@ export function Home() {
       ],
     );
   const feature = events.data?.find((event) => event.id === selected);
+  const riskOutdated = displayTime - risk.dataUpdatedAt > 60_000;
   const warnings = (
     routeResult.data?.fromCache ||
     eventResult.data?.fromCache ||
     risk.isError ||
     risk.isFetching ||
+    riskOutdated ||
     events.isError
       ? []
       : (risk.data ?? [])
@@ -186,6 +204,7 @@ export function Home() {
         severity: event.severity,
         status: event.status,
         confidence: event.confidence,
+        freshness: event.freshness,
       },
       geometry: {
         type: "Point",
@@ -243,19 +262,18 @@ export function Home() {
                 Math.min(180, e + dx),
                 Math.min(85, n + dy),
               ];
+              const rounded = padded.map(
+                (value, index) =>
+                  (index < 2
+                    ? Math.floor(value * 1000)
+                    : Math.ceil(value * 1000)) / 1000,
+              ) as typeof padded;
               if (
-                (padded[2] - padded[0]) * (padded[3] - padded[1]) <= 0.04 &&
+                (rounded[2] - rounded[0]) * (rounded[3] - rounded[1]) <= 0.04 &&
                 w < e &&
                 s < n
               ) {
-                setBbox(
-                  padded.map(
-                    (value, index) =>
-                      (index < 2
-                        ? Math.floor(value * 1000)
-                        : Math.ceil(value * 1000)) / 1000,
-                  ) as typeof padded,
-                );
+                setBbox(rounded);
                 setMapError("");
               } else
                 setMapError("Zoom in to load incidents in a smaller area.");
@@ -308,9 +326,15 @@ export function Home() {
             cluster
             clusterMaxZoom={13}
             onPress={(event) => {
-              const id = event.nativeEvent.features?.[0]?.properties?.eventId;
+              const feature = event.nativeEvent.features?.[0];
+              const id = feature?.properties?.eventId;
               if (typeof id === "string") useUI.getState().select(id);
-              else camera.current?.zoomTo(15, { duration: 500 });
+              else if (feature?.geometry.type === "Point")
+                camera.current?.easeTo({
+                  center: feature.geometry.coordinates as [number, number],
+                  zoom: 15,
+                  duration: 500,
+                });
               event.stopPropagation();
             }}
           >
@@ -327,6 +351,8 @@ export function Home() {
                 "circle-radius": 9,
                 "circle-opacity": [
                   "case",
+                  ["==", ["get", "freshness"], "AGING"],
+                  0.45,
                   ["==", ["get", "status"], "MONITORING"],
                   0.6,
                   1,
@@ -379,7 +405,8 @@ export function Home() {
         {eventResult.data?.fromCache ||
         routeResult.data?.fromCache ||
         events.isError ||
-        routes.isError ? (
+        routes.isError ||
+        (routes.data?.length && riskOutdated) ? (
           <Button
             title="Retry connection"
             disabled={events.isFetching || routes.isFetching}
@@ -391,6 +418,11 @@ export function Home() {
         {warnings[0] ? (
           <Text style={styles.warning}>
             {warnings[0].name}: {warnings[0].message}
+          </Text>
+        ) : null}
+        {routes.data?.length && riskOutdated && !risk.isFetching ? (
+          <Text>
+            Route report check is out of date; refresh before relying on it.
           </Text>
         ) : null}
         <Text style={styles.small}>
@@ -429,16 +461,13 @@ export function Home() {
                     <Button
                       key={value}
                       title={`${layer === value ? "✓ " : ""}${value.replaceAll("_", " ")}`}
+                      selected={layer === value}
                       onPress={() => {
                         useUI.getState().setLayer(value);
                         setSheet(null);
                       }}
                     />
                   ))}
-                  <Text>
-                    Water Stress, My Water, TankerOS, and route alternatives are
-                    unavailable until P0 is complete.
-                  </Text>
                 </>
               ) : null}
               {sheet === "routes" ? (
@@ -497,19 +526,38 @@ export function Home() {
                     }}
                   />
                   {routes.error ? <Text>{routes.error.message}</Text> : null}
+                  {routes.isFetching ? (
+                    <Text accessibilityLiveRegion="polite">
+                      Loading saved routes…
+                    </Text>
+                  ) : null}
+                  {!routes.isPending &&
+                  !routes.isError &&
+                  !routes.data?.length ? (
+                    <Text>
+                      No saved routes. Choose two map pins to add one.
+                    </Text>
+                  ) : null}
                   {(routes.data ?? []).map((route) => (
                     <View key={route.id} style={styles.card}>
                       <Text style={styles.title}>{route.name}</Text>
                       <Text>
-                        {routeResult.data?.fromCache || risk.error
+                        {routeResult.data?.fromCache ||
+                        eventResult.data?.fromCache ||
+                        risk.error ||
+                        riskOutdated ||
+                        events.isError
                           ? "Route risk unavailable; current conditions unknown."
-                          : risk.data?.find((r) => r.route.id === route.id)
-                                ?.risks.length
-                            ? "Currently reported hazards may affect this route."
-                            : "No intersecting reports found. This does not establish safety."}
+                          : risk.isPending || risk.isFetching
+                            ? "Checking current route reports…"
+                            : risk.data?.find((r) => r.route.id === route.id)
+                                  ?.risks.length
+                              ? "Currently reported hazards may affect this route."
+                              : "No intersecting reports found. This does not establish safety."}
                       </Text>
                       <Button
                         title={`Delete ${route.name}`}
+                        disabled={busy}
                         onPress={() => {
                           void act(async () => {
                             await api(
@@ -538,6 +586,14 @@ export function Home() {
                     awards require independent supporting evidence.
                   </Text>
                   {profile.error ? <Text>{profile.error.message}</Text> : null}
+                  {profile.isFetching ? (
+                    <Text accessibilityLiveRegion="polite">
+                      Loading contribution ledger…
+                    </Text>
+                  ) : null}
+                  {profile.data?.ledger.length === 0 ? (
+                    <Text>No contribution awards yet.</Text>
+                  ) : null}
                   {profile.data?.ledger.map((entry) => (
                     <Text key={entry.id}>
                       {entry.amount > 0 ? "+" : ""}
@@ -562,6 +618,22 @@ export function Home() {
                     category policy. This is not a measured water extent.
                   </Text>
                   <Text>{feature.publicSummary}</Text>
+                  <View
+                    style={[
+                      styles.badge,
+                      feature.freshness === "RECENT"
+                        ? styles.recent
+                        : styles.aging,
+                    ]}
+                  >
+                    <Text>
+                      {feature.freshness === "RECENT"
+                        ? "Recent citizen observation"
+                        : feature.freshness === "AGING"
+                          ? "Aging citizen observation · reconfirm conditions"
+                          : "Expired observation · current conditions unknown"}
+                    </Text>
+                  </View>
                   <Text>
                     {feature.verificationLabel} · {feature.reportCount}{" "}
                     observations
@@ -569,6 +641,11 @@ export function Home() {
                   <Text>
                     Last observed:{" "}
                     {new Date(feature.lastSeenAt).toLocaleString()}
+                  </Text>
+                  <Text>
+                    Source: citizen report · expires{" "}
+                    {new Date(feature.expiresAt).toLocaleString()}. Category
+                    radius is a policy estimate.
                   </Text>
                   <Text>
                     Severity {feature.severity}/5 · exact depth and road
@@ -689,4 +766,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   card: { padding: 15, gap: 12, backgroundColor: "#e6efea", borderRadius: 16 },
+  badge: { padding: 10, borderRadius: 12 },
+  recent: { backgroundColor: "#dcefe7" },
+  aging: { backgroundColor: "#f3e2c5" },
 });

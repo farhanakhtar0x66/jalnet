@@ -5,6 +5,9 @@ import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import { Text, View } from "react-native";
 import { Button } from "./Button";
+import { mobileConfig } from "./api";
+import { jsonRequest } from "./transport";
+import { z } from "zod";
 
 WebBrowser.maybeCompleteAuthSession();
 export function SignIn() {
@@ -15,10 +18,10 @@ export function SignIn() {
     setBusy(true);
     setError("");
     try {
-      const domain = process.env.EXPO_PUBLIC_COGNITO_DOMAIN;
-      const clientId = process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID;
-      if (!domain || !clientId)
+      if (mobileConfig?.mode !== "aws")
         throw new Error("Cognito configuration is blocked awaiting SSO.");
+      const domain = mobileConfig.EXPO_PUBLIC_COGNITO_DOMAIN;
+      const clientId = mobileConfig.EXPO_PUBLIC_COGNITO_CLIENT_ID;
       const discovery = {
         authorizationEndpoint: `${domain}/oauth2/authorize`,
         tokenEndpoint: `${domain}/oauth2/token`,
@@ -48,15 +51,22 @@ export function SignIn() {
         },
         discovery,
       );
-      await SecureStore.setItemAsync("jalnet.accessToken", tokens.accessToken);
-      if (tokens.refreshToken)
-        await SecureStore.setItemAsync(
-          "jalnet.refreshToken",
-          tokens.refreshToken,
+      // Ask the protected API for the authenticated subject. A locally decoded
+      // JWT payload must never choose the private draft/cache account scope.
+      const account = z
+        .object({ userId: z.uuid() })
+        .parse(
+          await jsonRequest(mobileConfig.apiUrl, "/v1/me", tokens.accessToken),
         );
+      // Persist token + verified account scope as one atomic SecureStore value.
       await SecureStore.setItemAsync(
-        "jalnet.expiresAt",
-        String(Date.now() + (tokens.expiresIn ?? 3600) * 1000),
+        "jalnet.session",
+        JSON.stringify({
+          accessToken: tokens.accessToken,
+          ...(tokens.refreshToken ? { refreshToken: tokens.refreshToken } : {}),
+          expiresAt: Date.now() + (tokens.expiresIn ?? 3600) * 1000,
+          accountScope: `cognito:${mobileConfig.EXPO_PUBLIC_COGNITO_POOL_ID}:${account.userId}`,
+        }),
       );
       await cache.resetQueries();
     } catch (error) {
@@ -81,9 +91,11 @@ export function SignIn() {
           setBusy(true);
           setError("");
           void Promise.all([
+            SecureStore.deleteItemAsync("jalnet.session"),
             SecureStore.deleteItemAsync("jalnet.accessToken"),
             SecureStore.deleteItemAsync("jalnet.refreshToken"),
             SecureStore.deleteItemAsync("jalnet.expiresAt"),
+            SecureStore.deleteItemAsync("jalnet.accountScope"),
           ])
             .then(() => {
               cache.clear();

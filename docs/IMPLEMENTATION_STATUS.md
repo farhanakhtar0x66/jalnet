@@ -4,7 +4,7 @@ Planning audit: 2026-10-08, Asia/Kolkata. Source: [JalNet_Implementation_Plan.md
 
 Implementation was authorized by explicit user **START**. The user subsequently directed autonomous local implementation while live AWS is **BLOCKED_AWAITING_SSO**, profile `jalnet`, region `ap-south-1`, and approved emulator testing until a physical phone is available. The repository is public; Aryanxp1 has write access and shubhrgunjan’s write invitation is pending.
 
-Current milestone: native map/report/route/profile shell, strict contracts/domain rules, deterministic LOCAL/DEMO HTTP and file providers, AWS SDK providers and CDK infrastructure. Native Gradle APK build/install/runtime, emulator camera capture/private localhost upload, draft restart recovery, simulated foreground GPS and disk-backed offline cache have executed. Nine suites / 44 tests pass locally; final checks and CI evidence are recorded in [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md). No AWS deployment or live integration has run; **P0 is not complete**.
+Current milestone: native map/report/route/profile shell, strict contracts/domain rules, deterministic LOCAL/DEMO HTTP and file providers, AWS SDK providers and CDK infrastructure. Native Gradle APK build/install/runtime, emulator camera capture/private localhost upload, draft restart recovery, simulated foreground GPS and disk-backed offline cache have executed. P0 cutover hardening adds explicit configuration, private account/role guards, bounded staged smoke, failure injection and demo/runbook preparation. Ten suites / 71 tests are the current suite (27 added); exact final results belong in [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md). No AWS deployment or live integration has run; **P0 is not complete**.
 
 ## Repository publication and access evidence
 
@@ -18,7 +18,7 @@ Current milestone: native map/report/route/profile shell, strict contracts/domai
 - The user later explicitly authorized making the repository public and inviting the team. `gh repo edit farhanakhtar0x66/jalnet --visibility public --accept-visibility-change-consequences` succeeded; GitHub metadata returned `private: false` and `visibility: public`.
 - GitHub collaborator PUT requests and the subsequent invitations listing confirmed pending `write` invitations to `Aryanxp1` (invitation `336639451`) and `shubhrgunjan` (invitation `336639454`). Both accounts were verified before invitation. On the implementation milestone recheck, Aryanxp1’s permission endpoint returned write; only shubhrgunjan remains in the pending invitation list with write permission.
 
-This is documentation/repository evidence only. The project license, final submission review and all live AWS product proofs remain incomplete.
+This is documentation/repository evidence only. The user selected MIT licensing during cutover cleanup. Final submission review and all live AWS product proofs remain incomplete.
 
 ## Initial audit evidence before repository publication
 
@@ -177,7 +177,7 @@ Verification entries distinguish existing planning/repository evidence from requ
 | P0-077 | Budget/request/log controls and feature kill switches | 50, 67, 68 | P0 | P0-004, P0-013, P0-030 | IN_PROGRESS | Feature flags default off, API/worker/log and local provider-attempt caps authored. Real account budget/alarms/live-cost controls pending. |
 | P0-078 | Architecture freeze after phone/map/API/S3/AI/fusion/route/reset proofs | 100 | P0 | P0-076 | BLOCKED | Architecture retained but not frozen: §100 requires the actual live proofs and five rehearsals still blocked. |
 | P0-079 | README, architecture/privacy/source/demo docs and honest limitations | 62, 64, 65, 93 | P0 | P0-072, P0-075 | IN_PROGRESS | README/architecture/privacy/source links/demo instructions and local milestone report authored. Final live deployment/submission documentation pending. |
-| P0-080 | Public repo, licenses, attribution and AI coding tool disclosure | 1, 48, 64, 93 | P0 | P0-001, P0-057, P0-079 | IN_PROGRESS | Public GitHub reverified; Aryanxp1 write active, shubhrgunjan write pending; Codex attribution/Expo starter license retained. Project-wide license and final submission review pending. |
+| P0-080 | Public repo, licenses, attribution and AI coding tool disclosure | 1, 48, 64, 93 | P0 | P0-001, P0-057, P0-079 | IN_PROGRESS | Public GitHub reverified; Aryanxp1 write active, shubhrgunjan write pending; Codex attribution/Expo starter license retained. MIT project license added at the user’s direction; final submission review pending. |
 | P0-081 | Sub-three-minute video showing live critical loop and AWS | 63, 69, 93 | P0 | P0-076, P0-079 | BLOCKED | No live-AWS demo video recorded; blocked on SSO and complete rehearsals. No substitute recording claimed. |
 | P0-082 | Final write-up/submission before verified official deadline | 1, 65, 93 | P0 | P0-080, P0-081; B-01 | NOT_STARTED | Exact official deadline/submission receipt not established; final write-up/submission has not run. |
 
@@ -222,3 +222,11 @@ Executed a one-off Node stdin validation of the planning files: exactly three do
 - Final local gate: format/lint/shared+mobile types/CDK synth/Hermes export PASS; nine suites / 44 tests PASS. Analysis lease, public filtering before response cap and approximate-radius geometry tests added. AWS smoke guard exits2 without calls. Local HTTP smoke passed against final source after clean reset/seed.
 
 - Public implementation push succeeded (32ac62a → 6bddc1c); local/remote SHA matched. [GitHub CI](https://github.com/farhanakhtar0x66/jalnet/actions/runs/37702139384) completed successfully: all local validation steps passed, checks job 42 seconds. AWS integrations remain IMPLEMENTED_UNVERIFIED/BLOCKED_AWAITING_SSO.
+
+### P0 cutover readiness gate
+
+- Full boundary/config/IAM/payload/failure/test/live-command audit, guarded deployment runbook and unrecorded demo preparation added. Target/model/resource values remain actual private deployment inputs, never invented defaults.
+- Configuration, identity, controlled capture, same-subject account and malformed key expiry/caller guards added; smoke stages remain bounded and perform independent probes before application writes. No live command executed or status promoted.
+- Local fixes cover interrupted upload/scheduling retry, stale/future captures, timed-out/malformed model and route providers, application JWT-shaped rejection, offline redaction and account-scoped drafts/cache. Scoped Lambda logging is asserted on actual synthesized IAM.
+- Final current gate passed: format/lint/types/synth, **10 suites / 71 tests (27 added)**, Android Hermes export and clean-seeded local HTTP smoke. Updated emulator capture/manual screen and freshness/provenance card rendered in LOCAL/DEMO. Detailed executed evidence is in IMPLEMENTATION_REPORT.md.
+- MIT added at the user's direction. P1/P2 remain frozen; AWS BLOCKED_AWAITING_SSO and final live demo/physical acceptance gates remain blocked.

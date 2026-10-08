@@ -3,16 +3,23 @@ export function Button({
   title,
   onPress,
   disabled = false,
+  accessibilityLabel,
+  selected,
 }: {
   title: string;
   onPress: () => void;
   disabled?: boolean;
+  accessibilityLabel?: string;
+  selected?: boolean;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={title}
-      accessibilityState={{ disabled }}
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityState={{
+        disabled,
+        ...(selected === undefined ? {} : { selected }),
+      }}
       disabled={disabled}
       onPress={onPress}
       style={[styles.button, disabled && styles.disabled]}

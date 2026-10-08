@@ -6,6 +6,7 @@ import {
   Duration,
   RemovalPolicy,
   Stack,
+  Tags,
   type StackProps,
 } from "aws-cdk-lib";
 import {
@@ -30,14 +31,19 @@ import type { Construct } from "constructs";
 export class JalnetStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+    Tags.of(this).add("Project", "JalNet");
+    Tags.of(this).add("Environment", "p0-dev");
     const modelId = new CfnParameter(this, "BedrockModelId", {
       type: "String",
-      default: "",
+      minLength: 1,
+      allowedPattern: "[A-Za-z0-9._:/-]+",
       description:
-        "Verified image-capable Nova model or inference profile ID; empty means manual fallback.",
+        "Actual image-capable Nova model or inference profile ID; deployment does not verify model access.",
     });
     const modelArns = new CfnParameter(this, "BedrockInvokeArns", {
       type: "CommaDelimitedList",
+      allowedPattern:
+        "arn:aws:bedrock:[a-z0-9-]+:[0-9]{0,12}:(foundation-model|inference-profile|application-inference-profile)/[A-Za-z0-9._:/-]+",
       description:
         "Actual model/profile ARNs required by the selected profile. No wildcard default.",
     });
@@ -130,10 +136,20 @@ export class JalnetStack extends Stack {
       DROPLET_LEDGER_TABLE: ledger.tableName,
       EVIDENCE_BUCKET: bucket.bucketName,
       MEDIA_QUEUE_URL: queue.queueUrl,
+      MEDIA_QUEUE_ARN: queue.queueArn,
       BEDROCK_MODEL_ID: modelId.valueAsString,
+      COGNITO_ISSUER: `https://cognito-idp.${this.region}.amazonaws.com/${pool.userPoolId}`,
+      COGNITO_CLIENT_ID: client.userPoolClientId,
     };
-    const fn = (name: string, entry: string, timeout = 30) =>
-      new NodejsFunction(this, name, {
+    const fn = (name: string, entry: string, timeout = 30) => {
+      const logGroup = new logs.LogGroup(this, `${name}Logs`, {
+        retention: logs.RetentionDays.ONE_WEEK,
+      });
+      const role = new iam.Role(this, `${name}Role`, {
+        assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
+      });
+      logGroup.grantWrite(role);
+      return new NodejsFunction(this, name, {
         entry: resolve(`services/aws/${entry}.ts`),
         runtime: lambda.Runtime.NODEJS_24_X,
         handler: "handler",
@@ -141,9 +157,8 @@ export class JalnetStack extends Stack {
         memorySize: 256,
         reservedConcurrentExecutions: 2,
         environment,
-        logGroup: new logs.LogGroup(this, `${name}Logs`, {
-          retention: logs.RetentionDays.ONE_WEEK,
-        }),
+        role,
+        logGroup,
         bundling: {
           target: "node24",
           minify: true,
@@ -151,6 +166,7 @@ export class JalnetStack extends Stack {
           externalModules: [],
         },
       });
+    };
     const reportFn = fn("ReportsAPI", "reports");
     const grant = (
       target: NodejsFunction,
@@ -260,8 +276,18 @@ export class JalnetStack extends Stack {
       throttlingRateLimit: 5,
     };
     new CfnOutput(this, "ApiUrl", { value: api.apiEndpoint });
+    new CfnOutput(this, "ApiId", { value: api.apiId });
     new CfnOutput(this, "UserPoolId", { value: pool.userPoolId });
     new CfnOutput(this, "UserPoolClientId", { value: client.userPoolClientId });
+    new CfnOutput(this, "AnalysisWorkerName", { value: worker.functionName });
+    new CfnOutput(this, "AnalysisDLQUrl", { value: dead.queueUrl });
+    new CfnOutput(this, "AnalysisDLQArn", { value: dead.queueArn });
+    new CfnOutput(this, "LocationMapsResourceArn", {
+      value: `arn:${this.partition}:geo-maps:${this.region}::provider/default`,
+    });
+    new CfnOutput(this, "LocationRoutesResourceArn", {
+      value: `arn:${this.partition}:geo-routes:${this.region}::provider/default`,
+    });
     for (const [name, value] of Object.entries(environment))
       new CfnOutput(this, name, { value });
   }

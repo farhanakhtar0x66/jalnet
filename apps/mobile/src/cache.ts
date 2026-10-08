@@ -1,8 +1,7 @@
 import * as Crypto from "expo-crypto";
-import * as SecureStore from "expo-secure-store";
 import { openDatabaseAsync } from "expo-sqlite";
 import type { z } from "zod";
-import { api, isLocal, NetworkError } from "./api";
+import { api, NetworkError, storageScope } from "./api";
 
 const dbPromise = openDatabaseAsync("jalnet-cache.db").then(async (db) => {
   await db.execAsync(
@@ -11,19 +10,17 @@ const dbPromise = openDatabaseAsync("jalnet-cache.db").then(async (db) => {
   return db;
 });
 export async function cachedApi<T>(path: string, schema: z.ZodType<T>) {
-  const token = isLocal
-    ? "LOCAL_DEMO_ALICE"
-    : await SecureStore.getItemAsync("jalnet.accessToken");
-  if (!token) throw new Error("Sign in before reading private cached data");
-  // A different account/session cannot read the preceding token's cached routes.
+  // Account scope comes from the authenticated API during PKCE sign-in, not a
+  // decoded bearer payload. Reauthentication preserves that account's drafts.
+  const accountScope = await storageScope();
   const scope = await Crypto.digestStringAsync(
     Crypto.CryptoDigestAlgorithm.SHA256,
-    token,
+    accountScope,
   );
   const key = `${scope}:${path}`;
   const db = await dbPromise;
   try {
-    const value = await api(path, schema);
+    const value = await api(path, schema, undefined, "GET", accountScope);
     const cachedAt = Date.now();
     await db.runAsync(
       "INSERT OR REPLACE INTO cache(key,body,savedAt) VALUES(?,?,?)",

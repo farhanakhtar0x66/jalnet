@@ -31,8 +31,13 @@ export class S3Evidence implements EvidenceProvider {
   constructor(
     private readonly bucket: string,
     region: string,
+    profile?: "jalnet",
   ) {
-    this.client = new S3Client({ region, maxAttempts: 2 });
+    this.client = new S3Client({
+      region,
+      maxAttempts: 2,
+      ...(profile ? { profile } : {}),
+    });
   }
   async presign(key: string, size: number) {
     return {
@@ -50,8 +55,10 @@ export class S3Evidence implements EvidenceProvider {
     };
   }
   async read(key: string) {
+    const signal = AbortSignal.timeout(10_000);
     const result = await this.client.send(
       new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+      { abortSignal: signal },
     );
     if (
       result.ContentType !== "image/jpeg" ||
@@ -60,7 +67,10 @@ export class S3Evidence implements EvidenceProvider {
       !result.Body
     )
       throw new Error("Invalid S3 evidence object");
-    return result.Body.transformToByteArray();
+    const bytes = await result.Body.transformToByteArray();
+    if (bytes.length !== result.ContentLength || bytes.length > 4_000_000)
+      throw new Error("Invalid S3 evidence length");
+    return bytes;
   }
 }
 export class NovaAnalysis implements AnalysisProvider {
@@ -69,8 +79,13 @@ export class NovaAnalysis implements AnalysisProvider {
   constructor(
     private readonly modelId: string,
     region: string,
+    profile?: "jalnet",
   ) {
-    this.client = new BedrockRuntimeClient({ region, maxAttempts: 1 });
+    this.client = new BedrockRuntimeClient({
+      region,
+      maxAttempts: 1,
+      ...(profile ? { profile } : {}),
+    });
   }
   async assess(image: Uint8Array) {
     if (!this.modelId)
@@ -113,6 +128,7 @@ export class NovaAnalysis implements AnalysisProvider {
         return mediaAssessmentSchema.parse(JSON.parse(text));
       } catch (error) {
         if (attempt === 1) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 250));
       }
     }
     throw new Error("Analysis did not return a validated assessment");
@@ -121,8 +137,12 @@ export class NovaAnalysis implements AnalysisProvider {
 export class AmazonRoutes implements RouteProvider {
   readonly provenance = "AWS_UNVERIFIED" as const;
   private readonly client: GeoRoutesClient;
-  constructor(region: string) {
-    this.client = new GeoRoutesClient({ region, maxAttempts: 2 });
+  constructor(region: string, profile?: "jalnet") {
+    this.client = new GeoRoutesClient({
+      region,
+      maxAttempts: 2,
+      ...(profile ? { profile } : {}),
+    });
   }
   async calculate(
     origin: Point,

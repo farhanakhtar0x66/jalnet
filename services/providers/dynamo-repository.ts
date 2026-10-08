@@ -41,9 +41,14 @@ export class DynamoRepository implements Repository {
   constructor(
     private readonly tables: Tables,
     region: string,
+    profile?: "jalnet",
   ) {
     this.client = DynamoDBDocumentClient.from(
-      new DynamoDBClient({ region, maxAttempts: 2 }),
+      new DynamoDBClient({
+        region,
+        maxAttempts: 2,
+        ...(profile ? { profile } : {}),
+      }),
       { marshallOptions: { removeUndefinedValues: true } },
     );
   }

@@ -17,7 +17,7 @@ import {
   View,
 } from "react-native";
 import { z } from "zod";
-import { api, isLocal } from "./api";
+import { api, isLocal, storageScope } from "./api";
 import { Button } from "./Button";
 import { clearDraft, type LocalDraft, readDraft, saveDraft } from "./drafts";
 import { useUI } from "./ui";
@@ -49,6 +49,10 @@ export function ReportFlow({ close }: { close: () => void }) {
   const pin = useUI((s) => s.pin);
   const accuracy = useUI((s) => s.accuracyM);
   const queryClient = useQueryClient();
+  const analysisPollStarted = useRef(Date.now());
+  useEffect(() => {
+    if (draft?.reportId) analysisPollStarted.current = Date.now();
+  }, [draft?.reportId]);
   useEffect(() => {
     readDraft()
       .then((draft) => {
@@ -62,10 +66,20 @@ export function ReportFlow({ close }: { close: () => void }) {
   }, []);
   const report = useQuery({
     queryKey: ["report", draft?.reportId],
-    queryFn: () => api(`/v1/reports/${draft?.reportId}`, reportSchema),
+    queryFn: () =>
+      api(
+        `/v1/reports/${draft?.reportId}`,
+        reportSchema,
+        undefined,
+        "GET",
+        draft?.accountScope,
+      ),
     enabled: !!draft?.reportId,
     refetchInterval: (query) =>
-      query.state.data?.status === "ANALYZING" ? 1200 : false,
+      query.state.data?.status === "ANALYZING" &&
+      Date.now() - analysisPollStarted.current < 120_000
+        ? 1200
+        : false,
   });
   const act = async (operation: () => Promise<void>) => {
     setBusy(true);
@@ -80,6 +94,11 @@ export function ReportFlow({ close }: { close: () => void }) {
   };
   const capture = () =>
     act(async () => {
+      const accountScope = await storageScope();
+      if (!useUI.getState().initialized)
+        throw new Error(
+          "Choose an observation pin on the map or use foreground location before capturing evidence",
+        );
       const photo = await camera.current?.takePictureAsync({
         quality: 0.85,
         exif: false,
@@ -100,6 +119,7 @@ export function ReportFlow({ close }: { close: () => void }) {
       const file = new File(Paths.document, `report-${Date.now()}.jpg`);
       source.copy(file);
       const next = {
+        accountScope,
         uri: file.uri,
         capturedAt: new Date().toISOString(),
         location: {
@@ -117,9 +137,23 @@ export function ReportFlow({ close }: { close: () => void }) {
   const upload = () =>
     act(async () => {
       if (!draft) return;
+      if (draft.accountScope !== (await storageScope()))
+        throw new Error("Account changed; original private draft was kept");
       let current = draft;
+      const scopedApi = <T,>(
+        path: string,
+        schema: z.ZodType<T>,
+        body?: unknown,
+      ) =>
+        api(
+          path,
+          schema,
+          body,
+          body === undefined ? "GET" : "POST",
+          current.accountScope,
+        );
       if (!current.reportId) {
-        const created = await api("/v1/reports", reportSchema, {
+        const created = await scopedApi("/v1/reports", reportSchema, {
           action: "DRAFT",
           capturedAt: current.capturedAt,
           location: current.location ?? {
@@ -132,13 +166,28 @@ export function ReportFlow({ close }: { close: () => void }) {
         await saveDraft(current);
         setDraft(current);
       }
-      const latest = await api(`/v1/reports/${current.reportId}`, reportSchema);
+      const latest = await scopedApi(
+        `/v1/reports/${current.reportId}`,
+        reportSchema,
+      );
+      if (latest.status === "ANALYZING") {
+        analysisPollStarted.current = Date.now();
+        // Completion may have committed before SQS scheduling failed. Retrying
+        // this action reschedules the same owned report; the worker lease prevents
+        // concurrent duplicate analysis. Do not create/upload a replacement.
+        await scopedApi("/v1/reports", reportSchema, {
+          action: "UPLOAD_COMPLETE",
+          reportId: current.reportId,
+        });
+        queryClient.setQueryData(["report", current.reportId], latest);
+        return;
+      }
       if (!["DRAFT", "UPLOADING"].includes(latest.status)) {
         queryClient.setQueryData(["report", current.reportId], latest);
         return;
       }
       const file = new File(current.uri);
-      const presign = await api(
+      const presign = await scopedApi(
         "/v1/uploads/presign",
         z.object({ url: z.url(), expiresIn: z.number(), reportId: z.uuid() }),
         {
@@ -151,30 +200,37 @@ export function ReportFlow({ close }: { close: () => void }) {
         method: "PUT",
         headers: { "Content-Type": "image/jpeg" },
         body: file,
+        signal: AbortSignal.timeout(30_000),
       });
       if (!response.ok)
         throw new Error("Private upload failed; your draft is saved for retry");
-      await api("/v1/reports", reportSchema, {
+      await scopedApi("/v1/reports", reportSchema, {
         action: "UPLOAD_COMPLETE",
         reportId: current.reportId,
       });
       queryClient.setQueryData(
         ["report", current.reportId],
-        await api(`/v1/reports/${current.reportId}`, reportSchema),
+        await scopedApi(`/v1/reports/${current.reportId}`, reportSchema),
       );
     });
   const confirm = () =>
     act(async () => {
       if (!draft?.reportId) return;
-      await api(`/v1/reports/${draft.reportId}/confirm`, confirmationResult, {
-        category,
-        severity,
-        location: pin,
-        stillActive: true,
-        note,
-        publicRoad,
-      });
-      await clearDraft();
+      await api(
+        `/v1/reports/${draft.reportId}/confirm`,
+        confirmationResult,
+        {
+          category,
+          severity,
+          location: pin,
+          stillActive: true,
+          note,
+          publicRoad,
+        },
+        "POST",
+        draft.accountScope,
+      );
+      await clearDraft(draft.accountScope);
       const file = new File(draft.uri);
       if (file.exists) file.delete();
       await queryClient.invalidateQueries();
@@ -191,11 +247,11 @@ export function ReportFlow({ close }: { close: () => void }) {
           style: "destructive",
           onPress: () => {
             void act(async () => {
+              if (draft) await clearDraft(draft.accountScope);
               if (draft) {
                 const file = new File(draft.uri);
                 if (file.exists) file.delete();
               }
-              await clearDraft();
               setDraft(null);
             });
           },
@@ -209,6 +265,12 @@ export function ReportFlow({ close }: { close: () => void }) {
         Pin: {pin.lat.toFixed(5)}, {pin.lon.toFixed(5)}. Close this sheet and
         tap the map to correct it.
       </Text>
+      {report.isFetching && draft?.reportId ? (
+        <Text accessibilityLiveRegion="polite">Refreshing private report…</Text>
+      ) : null}
+      {report.error ? (
+        <Text accessibilityRole="alert">{report.error.message}</Text>
+      ) : null}
       {error ? (
         <Text accessibilityRole="alert" style={styles.error}>
           {error}
@@ -233,13 +295,17 @@ export function ReportFlow({ close }: { close: () => void }) {
             <Button
               title="Allow camera"
               onPress={() => {
-                void requestPermission();
+                void act(async () => {
+                  await requestPermission();
+                });
               }}
             />
             <Button
               title="Open app settings"
               onPress={() => {
-                void Linking.openSettings();
+                void act(async () => {
+                  await Linking.openSettings();
+                });
               }}
             />
           </>
@@ -257,7 +323,38 @@ export function ReportFlow({ close }: { close: () => void }) {
             />
           ) : null}
           {report.data?.status === "ANALYZING" ? (
-            <Text>Analyzing private evidence…</Text>
+            <>
+              <Text>
+                Analyzing private evidence… If scheduling was interrupted, retry
+                the same report.
+              </Text>
+              <Button
+                title="Retry analysis scheduling"
+                disabled={busy}
+                onPress={upload}
+              />
+            </>
+          ) : null}
+          {report.data &&
+          ["ACCEPTED", "MERGED"].includes(report.data.status) ? (
+            <>
+              <Text>
+                Report already submitted. Clear the saved local draft to finish.
+              </Text>
+              <Button
+                title="Finish / clear submitted draft"
+                disabled={busy}
+                onPress={() => {
+                  void act(async () => {
+                    await clearDraft(draft.accountScope);
+                    const file = new File(draft.uri);
+                    if (file.exists) file.delete();
+                    await queryClient.invalidateQueries();
+                    close();
+                  });
+                }}
+              />
+            </>
           ) : null}
           {report.data?.status === "NEEDS_CONFIRMATION" ? (
             <>
@@ -265,8 +362,9 @@ export function ReportFlow({ close }: { close: () => void }) {
               <Text>
                 {isLocal
                   ? "LOCAL/DEMO: no image model ran. Classify manually."
-                  : (report.data.aiAssessment?.publicDraft ??
-                    "Analysis unavailable. Classify manually; your report is retained.")}
+                  : report.data.aiAssessment
+                    ? `AI draft for your review; not verified: ${report.data.aiAssessment.publicDraft}`
+                    : "Analysis unavailable. Classify manually; your report is retained."}
               </Text>
               <Text>
                 {report.data.aiAssessment?.uncertaintyReasons.join(" ")}
@@ -275,6 +373,7 @@ export function ReportFlow({ close }: { close: () => void }) {
                 <Button
                   key={value}
                   title={`${category === value ? "✓ " : ""}${value.replaceAll("_", " ")}`}
+                  selected={category === value}
                   onPress={() => setCategory(value)}
                 />
               ))}
@@ -284,6 +383,8 @@ export function ReportFlow({ close }: { close: () => void }) {
                   <Button
                     key={n}
                     title={String(n)}
+                    accessibilityLabel={`Severity ${n} of 4`}
+                    selected={severity === n}
                     onPress={() => setSeverity(n)}
                   />
                 ))}
@@ -337,7 +438,7 @@ export function ReportFlow({ close }: { close: () => void }) {
           <Button title="Discard draft" disabled={busy} onPress={reset} />
         </>
       )}
-      <Button title="Close / keep draft" onPress={close} />
+      <Button title="Close / keep draft" disabled={busy} onPress={close} />
     </ScrollView>
   );
 }

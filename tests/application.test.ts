@@ -14,6 +14,7 @@ import {
 } from "../packages/geo/src/index.js";
 import { Application, publicEvent } from "../services/core/application.js";
 import type { EvidenceProvider } from "../services/core/ports.js";
+import { dispatch, errorResponse } from "../services/core/http.js";
 import { LocalAnalysis, LocalRoutes } from "../services/providers/local.js";
 import { LocalRepository } from "../services/providers/local-repository.js";
 
@@ -28,6 +29,7 @@ const observation = {
 };
 const bbox = [77.2, 28.6, 77.22, 28.63] as const;
 function fixture() {
+  let currentTime = now;
   const repository = new LocalRepository();
   const files = new Map<string, Uint8Array>();
   const evidence: EvidenceProvider = {
@@ -43,7 +45,7 @@ function fixture() {
     evidence,
     new LocalAnalysis(),
     new LocalRoutes(),
-    () => now,
+    () => currentTime,
   );
   async function ready(
     userId: string,
@@ -74,8 +76,168 @@ function fixture() {
     if (runAnalysis) await app.analyze(draft.id);
     return draft.id;
   }
-  return { app, repository, ready, files };
+  return {
+    app,
+    repository,
+    ready,
+    files,
+    advance: (time: string) => {
+      currentTime = time;
+    },
+  };
 }
+describe("LOCAL P0 failure injection", () => {
+  it("retains an interrupted upload for retry without publication or rewards", async () => {
+    const { app, files } = fixture();
+    const draft = await app.createReport("alice", {
+      action: "DRAFT",
+      capturedAt: now,
+      location: { ...point, source: "USER_PIN" },
+    });
+    const bytes = encode(
+      { data: Buffer.alloc(8 * 8 * 4, 100), width: 8, height: 8 },
+      90,
+    ).data;
+    const grant = await app.presign("alice", {
+      reportId: draft.id,
+      contentType: "image/jpeg",
+      contentLength: bytes.length,
+    });
+    files.set(grant.url, bytes.subarray(0, bytes.length / 2));
+    await expect(app.completeUpload("alice", draft.id)).rejects.toMatchObject({
+      code: "UPLOAD_TOO_LARGE",
+    });
+    expect((await app.ownedReport("alice", draft.id)).status).toBe("UPLOADING");
+    expect(await app.events(bbox, "LIVE")).toEqual([]);
+    expect((await app.profile("alice")).droplets).toBe(0);
+    files.set(grant.url, bytes);
+    expect((await app.completeUpload("alice", draft.id)).status).toBe(
+      "ANALYZING",
+    );
+  });
+  it("retries scheduling after a queue failure without recreating the report", async () => {
+    const { app, ready } = fixture();
+    const id = await ready("alice", 1, point, false);
+    const onReady = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("private-queue-diagnostic"))
+      .mockResolvedValue(undefined);
+    const request = {
+      method: "POST",
+      path: "/v1/reports",
+      userId: "alice",
+      query: {},
+      body: { action: "UPLOAD_COMPLETE", reportId: id },
+    };
+    try {
+      await dispatch(app, request, onReady);
+    } catch (error) {
+      expect(errorResponse(error).status).toBe(503);
+      expect(JSON.stringify(errorResponse(error).body)).not.toContain(
+        "private-queue",
+      );
+    }
+    expect((await app.ownedReport("alice", id)).status).toBe("ANALYZING");
+    expect(((await dispatch(app, request, onReady)) as { id: string }).id).toBe(
+      id,
+    );
+    expect(onReady).toHaveBeenCalledTimes(2);
+    await app.analyze(id);
+    await dispatch(app, request, onReady);
+    expect(onReady).toHaveBeenCalledTimes(2);
+  });
+  it("falls back privately after analysis timeout and never publishes or awards automatically", async () => {
+    const { app, ready } = fixture(),
+      id = await ready("alice", 1, point, false);
+    vi.spyOn(app.analysis, "assess").mockRejectedValue(
+      new Error("unit timeout"),
+    );
+    await app.analyze(id);
+    const report = await app.ownedReport("alice", id);
+    expect(report.status).toBe("NEEDS_CONFIRMATION");
+    expect(report.aiAssessment).toBeUndefined();
+    expect(report.analysisProvenance).toBe("LOCAL_DEMO");
+    expect(await app.events(bbox, "LIVE")).toEqual([]);
+    expect((await app.profile("alice")).droplets).toBe(0);
+  });
+  it("rejects captures from the future and drafts that become stale before confirmation", async () => {
+    const { app, ready, advance } = fixture();
+    await expect(
+      app.createReport("alice", {
+        action: "DRAFT",
+        capturedAt: "2026-10-08T09:00:00.000Z",
+        location: { ...point, source: "USER_PIN" },
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
+    const id = await ready("alice", 1);
+    advance("2026-10-09T08:00:01.000Z");
+    await expect(app.confirm("alice", id, observation)).rejects.toMatchObject({
+      code: "VALIDATION_FAILED",
+    });
+    expect(await app.events(bbox, "LIVE")).toEqual([]);
+    expect((await app.profile("alice")).droplets).toBe(0);
+  });
+  it("denies stale upload/requeue but preserves replay of an already accepted report", async () => {
+    const { app, ready, advance } = fixture();
+    const accepted = await ready("alice", 1);
+    await app.confirm("alice", accepted, observation);
+    const pending = await ready("bob", 2, point, false);
+    const draft = await app.createReport("carol", {
+      action: "DRAFT",
+      capturedAt: now,
+      location: { ...point, source: "USER_PIN" },
+    });
+    advance("2026-10-09T08:00:01.000Z");
+    await expect(app.completeUpload("bob", pending)).rejects.toMatchObject({
+      code: "VALIDATION_FAILED",
+    });
+    await expect(
+      app.presign("carol", {
+        reportId: draft.id,
+        contentType: "image/jpeg",
+        contentLength: 100,
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
+    expect((await app.confirm("alice", accepted, observation)).replay).toBe(
+      true,
+    );
+    expect((await app.profile("alice")).droplets).toBe(2);
+  });
+  it("saves no route or false risk result when its provider fails", async () => {
+    const { app, repository } = fixture();
+    vi.spyOn(app.routeProvider, "calculate").mockRejectedValue(
+      new Error("private-route-diagnostic"),
+    );
+    await expect(
+      app.saveRoute("alice", {
+        name: "LOCAL failure",
+        origin: point,
+        destination: { ...point, lon: 77.215 },
+        travelMode: "Car",
+        activeAlerts: true,
+      }),
+    ).rejects.toThrow();
+    expect(await repository.routes("alice")).toEqual([]);
+    expect(await app.risks("alice")).toEqual([]);
+  });
+  it("excludes an expired incident from both map results and route warnings", async () => {
+    const { app, ready, advance } = fixture();
+    await app.saveRoute("bob", {
+      name: "LOCAL expiry",
+      origin: { ...point, lon: 77.205 },
+      destination: { ...point, lon: 77.215 },
+      travelMode: "Car",
+      activeAlerts: true,
+    });
+    const id = await ready("alice", 1);
+    const confirmed = await app.confirm("alice", id, observation);
+    expect((await app.risks("bob"))[0]?.risks).toHaveLength(1);
+    advance("2026-10-09T08:00:00.000Z");
+    expect(await app.events(bbox, "LIVE")).toEqual([]);
+    expect((await app.risks("bob"))[0]?.risks).toEqual([]);
+    expect(await app.repository.getEvent(confirmed.eventId)).toBeDefined();
+  });
+});
 describe("local report transaction", () => {
   it("leases concurrent analysis so duplicate workers do not invoke the model twice", async () => {
     const { app, ready } = fixture();

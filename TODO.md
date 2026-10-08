@@ -22,7 +22,19 @@ This checklist tracks work order. The [implementation status matrix](docs/IMPLEM
 - [x] User approved emulator testing now; physical Android demo phone remains deferred.
 - [x] Configure JDK17 and Android36; native Gradle build/install and emulator runtime passed.
 - [x] Pin Node24/pnpm10/Expo57/RN0.86/MapLibre11; typecheck, JS bundle and native MapLibre emulator runtime pass.
-- [ ] Choose an open-source license and record attribution requirements.
+- [x] User selected MIT; project license added and existing Expo/dependency/map attribution requirements retained.
+
+## P0 cutover readiness — scope frozen
+
+- [x] Trace every live boundary/config/resource/IAM/payload/error/test/command in AWS_CUTOVER_CHECKLIST.md.
+- [x] Require actual model/resource/Cognito/mobile values; remove empty-model deployment and implicit AWS-region fallback.
+- [x] Guard live deployment/smoke with explicit live flag, jalnet SSO profile and private expected account/role; refuse wrong targets.
+- [x] Design bounded read-only dependency/provider/HTTP workflow stages, controlled capture/hash checks and private receipts; no cloud deletion.
+- [x] Add local failure injections and CloudFormation-output compatibility coverage; no live AWS inference.
+- [x] Prepare guarded deployment runbook and reset/seed/three-minute shot list/data/fallback/architecture frame; no final recording.
+- [x] Complete scoped freshness/provenance/loading/error/copy/accessibility/recovery cleanup and account-scoped private storage.
+- [ ] Execute real AWS gates after SSO; confirm native Android key restriction protocol and rendering enforcement.
+- [ ] Complete physical phone acceptance and final live demo gate. P1/P2 remain frozen.
 
 ## Phase 0 — Prove risky integrations
 

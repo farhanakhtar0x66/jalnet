@@ -44,15 +44,29 @@ const fail = (code: string, status: number, message: string): never => {
 const supporters = (event: WaterEvent): string[] =>
   z.array(z.string()).catch([]).parse(event.attributes.supporterIds);
 // Only publish the consent flag. Internal contributor IDs and evidence hashes stay private.
-export function publicEvent(event: WaterEvent) {
+export function publicEvent(event: WaterEvent, now = new Date().toISOString()) {
+  const labels: Record<WaterEvent["status"], string> = {
+    ACTIVE: "Community corroborated",
+    UNVERIFIED: "Single report / unverified",
+    MONITORING: "Clearance reported / monitoring",
+    RESOLVED: "Community reports indicate clearance",
+    EXPIRED: "Expired observation / current conditions unknown",
+    REJECTED: "Rejected observation",
+  };
   return {
     ...event,
     attributes: { publicRoad: event.attributes.publicRoad === true },
     provenance: "CITIZEN_REPORT",
+    freshness:
+      Date.parse(event.expiresAt) <= Date.parse(now)
+        ? "EXPIRED"
+        : Date.parse(now) - Date.parse(event.lastSeenAt) > 3_600_000
+          ? "AGING"
+          : "RECENT",
     verificationLabel:
-      event.status === "ACTIVE"
-        ? "Community corroborated"
-        : "Single report / unverified",
+      Date.parse(event.expiresAt) <= Date.parse(now)
+        ? labels.EXPIRED
+        : labels[event.status],
   };
 }
 export class Application {
@@ -67,6 +81,15 @@ export class Application {
     readonly routeProvider: RouteProvider,
     private readonly clock = () => new Date().toISOString(),
   ) {}
+  private requireFreshCapture(capturedAt: string) {
+    const age = Date.parse(this.clock()) - Date.parse(capturedAt);
+    if (!Number.isFinite(age) || age > 86_400_000 || age < -300_000)
+      return fail(
+        "VALIDATION_FAILED",
+        400,
+        "Capture must be within the past day; retake stale evidence or correct the device clock",
+      );
+  }
   async ownedReport(userId: string, id: string): Promise<Report> {
     const report = await this.repository.getReport(id);
     if (!report) return fail("REPORT_NOT_FOUND", 404, "Report not found");
@@ -78,15 +101,7 @@ export class Application {
     const request = createReportRequestSchema.parse(input);
     if (request.action === "UPLOAD_COMPLETE")
       return this.completeUpload(userId, request.reportId);
-    if (
-      Math.abs(Date.parse(this.clock()) - Date.parse(request.capturedAt)) >
-      86_400_000
-    )
-      return fail(
-        "VALIDATION_FAILED",
-        400,
-        "Capture must be within the last day",
-      );
+    this.requireFreshCapture(request.capturedAt);
     const report: Report = {
       id: randomUUID(),
       userId,
@@ -115,6 +130,7 @@ export class Application {
     const request = presignRequestSchema.parse(input);
     for (let attempt = 0; attempt < 5; attempt++) {
       const report = await this.ownedReport(userId, request.reportId);
+      this.requireFreshCapture(report.capturedAt);
       if (!["DRAFT", "UPLOADING"].includes(report.status))
         return fail(
           "REPORT_BAD_STATE",
@@ -166,12 +182,10 @@ export class Application {
   }
   async completeUpload(userId: string, id: string) {
     const report = await this.ownedReport(userId, id);
-    if (
-      ["ANALYZING", "NEEDS_CONFIRMATION", "ACCEPTED", "MERGED"].includes(
-        report.status,
-      )
-    )
+    if (["NEEDS_CONFIRMATION", "ACCEPTED", "MERGED"].includes(report.status))
       return report;
+    this.requireFreshCapture(report.capturedAt);
+    if (report.status === "ANALYZING") return report;
     const media = report.media[0];
     if (report.status !== "UPLOADING" || !media || !report.upload)
       return fail("REPORT_BAD_STATE", 409, "No pending upload");
@@ -252,6 +266,7 @@ export class Application {
       );
     let assessment: Report["aiAssessment"];
     try {
+      this.requireFreshCapture(report.capturedAt);
       const image = await this.evidence.read(report.media[0].s3Key);
       if (
         createHash("sha256").update(image).digest("hex") !==
@@ -278,6 +293,7 @@ export class Application {
       const report = await this.ownedReport(userId, id);
       if (report.mergedEventId)
         return { report, eventId: report.mergedEventId, replay: true };
+      this.requireFreshCapture(report.capturedAt);
       if (report.status !== "NEEDS_CONFIRMATION")
         return fail(
           "REPORT_BAD_STATE",
@@ -443,7 +459,7 @@ export class Application {
           b.lastSeenAt.localeCompare(a.lastSeenAt),
       )
       .slice(0, 200)
-      .map(publicEvent);
+      .map((event) => publicEvent(event, this.clock()));
   }
   async vote(userId: string, id: string, input: unknown) {
     const vote = z
