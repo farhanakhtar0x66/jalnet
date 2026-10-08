@@ -32,7 +32,7 @@ pnpm local:server:usb
 pnpm mobile:start:usb
 ```
 
-Use this pair instead of the emulator pair: upload grants also need the USB-loopback address. The [device handoff](docs/BUILD_IT_DEVICE_DEMO.md) gives installation, launch, reset, acceptance and a planned 2:45 judge script. The existing development APK requires Metro and USB; physical installation/camera/location and timed rehearsals remain pending. Do not erase wanted phone drafts to rehearse.
+Use this pair instead of the emulator pair: upload grants also need the USB-loopback address. The [device handoff](docs/BUILD_IT_DEVICE_DEMO.md) gives installation, launch, reset, acceptance and a planned 2:45 judge script. The existing development APK requires Metro and USB. Installation, real staged camera capture/private upload, incident/route warning/+2 ledger and route refresh passed on the Redmi Note 9 Pro Max reporting Android16/API36. Remaining permission/location/recovery/usability checks and timed rehearsals are pending. Do not erase wanted phone drafts to rehearse.
 
 For a first native Android build with the SDK/JDK configured:
 
@@ -40,7 +40,7 @@ For a first native Android build with the SDK/JDK configured:
 pnpm mobile:android
 ```
 
-Expo generates ignored `apps/mobile/android`. A cold native build downloads substantial Gradle/NDK artifacts. The native debug APK built, installed and ran in the emulator. Camera capture/upload, draft recovery, simulated foreground GPS and offline cache were exercised; see the implementation report for exact scope. The user is connecting a physical phone for the next acceptance gate; emulator results do not establish physical compatibility.
+Expo generates ignored `apps/mobile/android`. A cold native build downloads substantial Gradle/NDK artifacts. The native debug APK built, installed and ran in the emulator. Camera capture/upload, draft recovery, simulated foreground GPS and offline cache were exercised there. The existing APK subsequently installed/launched and completed one real staged-camera local flow on the physical Redmi; its remaining device matrix is pending. See the implementation report for exact scope; emulator results remain separate from phone evidence.
 
 To exercise the local loop: seed the corridor, tap a nearby map pin, capture a JPEG, upload privately, manually choose category/severity, confirm still-active and public-road consent, then submit. View the incident, route warning and provisional points. A second distinct local identity can contribute different evidence through the API tests; copied evidence and self-corroboration are rejected. Do not describe this as real independent witness evidence.
 
