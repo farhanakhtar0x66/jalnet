@@ -49,7 +49,10 @@ async function capture(identity: string, color: number) {
     contentLength: bytes.length,
   });
   const localUrl = new URL(grant.url);
-  assert.equal(localUrl.hostname, "10.0.2.2");
+  assert(
+    ["http://10.0.2.2:8787", "http://127.0.0.1:8787"].includes(localUrl.origin),
+    "LOCAL/DEMO upload must use the emulator or USB loopback origin",
+  );
   localUrl.hostname = "127.0.0.1";
   const upload = await fetch(localUrl, {
     method: "PUT",

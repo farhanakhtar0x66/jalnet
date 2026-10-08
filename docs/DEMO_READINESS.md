@@ -1,6 +1,6 @@
-# P0 rehearsal and final-demo gate
+# AWS live rehearsal and separate local Build It gate
 
-2026-10-08. **Do not record the final demo yet.** AWS remains **BLOCKED_AWAITING_SSO**; physical Android camera/GPS acceptance is deferred. This prepares a rehearsal, not a P0-complete claim. No video-report product feature, push, prediction, background tracking or P1/P2 work is included.
+2026-10-08. **Do not record the final demo yet.** AWS remains **BLOCKED_AWAITING_SSO**; one physical Redmi staged-camera local flow passed, while the remaining device/permission/GPS matrix is pending. The separate [local Build It device handoff](BUILD_IT_DEVICE_DEMO.md) contains USB setup, reset/seed, Cedar proof, explicit disclosures and a planned **2:45** script. A local Build It submission can be prepared independently of AWS SSO, with its own device/participation/submission gates. The live shot list below remains blocked until actual cloud and physical acceptance. Neither path declares P0 complete. No video-report product feature, push, prediction, background tracking or P1/P2 work is included.
 
 ## Exact local reset and seed
 
@@ -14,7 +14,7 @@
    ```
 
    Reset deletes only ignored `.local-data` fixtures. Seed creates one `local-alice` **LOCAL/DEMO straight-line corridor** from (28.6139,77.205) to (28.6139,77.215), no observation, public event, analysis or points. No cloud deletion/write exists in these commands.
-3. Choose a local rehearsal pin near (28.6139,77.209). Mobile mode must say **LOCAL / DEMO · AWS blocked awaiting SSO**; API `http://10.0.2.2:8787` for Android emulator. Run the existing native dev build with Metro: `pnpm mobile:start`. Keep the generated dev build's server connection at host port 8081 (`adb reverse tcp:8081 tcp:8081` if required). Use the workspace's adb path if Android tooling is not globally installed.
+3. Choose a local rehearsal pin near (28.6139,77.209). Mobile mode must say **LOCAL / DEMO · AWS blocked awaiting SSO**; API `http://10.0.2.2:8787` for Android emulator. Run the existing native dev build with Metro: `pnpm mobile:start:local`. Keep the generated dev build's server connection at host port 8081 (`adb reverse tcp:8081 tcp:8081` if required). For a physical USB phone, use the paired `pnpm local:server:usb` / `pnpm mobile:start:usb` and reverse both 8787 and 8081 as detailed in the handoff. These explicit local presets preserve any cloud `.env`.
 4. Clear a saved draft through Camera → Discard draft, confirming that it deletes the local image. Sign out clears the account session/query state. Drafts are now keyed by the authenticated account scope; old unscoped milestone drafts are retained privately and not automatically attributed to a live account. For a **deliberate clean reset of the dedicated emulator rehearsal app only**, run `adb shell pm clear org.jalnet.mobile`, then launch the installed dev build and reconnect Metro. This removes that app's local draft/cache/session/permission data, not any AWS data. Do not run it on a user's physical app containing wanted drafts.
 5. In a second terminal, `pnpm smoke:local` executes two distinct generated JPEG fixture reports and assertions through the real localhost HTTP API. It expects the clean seeded server; do not run it after manual reports without repeating steps 1–2. Its console must say LOCAL/DEMO. It changes local fixture data; repeat reset/seed afterward for a clean interactive rehearsal.
 
@@ -28,7 +28,7 @@ Exact safe live preparation after [AWS_DEPLOYMENT_RUNBOOK.md](AWS_DEPLOYMENT_RUN
 
 For a final interactive demo, separately verify fresh dedicated accounts' `/v1/me` and routes, then save one real road route intersecting the safely observed public-road issue. A second real independent observer may prepare a private fresh capture/assessment before filming, with no public confirmation or award yet. Keep that preparation visible in narration; do not suggest it was captured during the shot. No fake live seed exists. If the real scene/independent observer/route/phone is unavailable, the final live demo remains blocked; only a labeled LOCAL/DEMO rehearsal is permitted.
 
-## Three-minute shot list (preparation only)
+## Live AWS three-minute shot list (preparation only)
 
 | Time | Shot and acceptance evidence |
 |---|---|
@@ -48,8 +48,8 @@ If real timings exceed three minutes, rehearse five times after live acceptance 
 | Data/boundary | Current local rehearsal | Intended final live demo |
 |---|---|---|
 | Authentication | Fixed localhost Alice/Bob demo identities | Actual Cognito PKCE/access tokens; two real dedicated accounts |
-| Basemap | Official MapLibre demo tiles | Amazon Location Maps V2 style/tile/sprite/glyph assets with validated restricted expiring key |
-| Camera/location | Emulator camera scene and simulated foreground GPS; user pin | Physical Android capture and foreground GPS or honest user pin; no background route learning |
+| Basemap | Public OpenFreeMap Liberty / OpenMapTiles / OpenStreetMap street assets in existing MapLibre client; internet required | Amazon Location Maps V2 style/tile/sprite/glyph assets with validated restricted expiring key |
+| Camera/location | Physical Redmi staged test-object capture/private local upload now passed; synthetic demo pin. Prior emulator/simulated GPS evidence remains separate | Physical Android capture and foreground GPS or honest user pin; no background route learning |
 | Evidence/storage/queue | Local files/JSON persistence and synchronous local analysis | Private S3, DynamoDB conditional transactions, actual SQS → worker |
 | Analysis | Deterministic uncertain/manual LOCAL/DEMO output | Actual Nova structured output, or explicitly failed/manual fallback |
 | Incident/fusion/ledger | Real application logic over clearly simulated JPEG observations | Same domain logic over actual confirmed citizen observations; persisted real ledger |

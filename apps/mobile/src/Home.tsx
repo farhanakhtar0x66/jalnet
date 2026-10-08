@@ -35,9 +35,9 @@ import { SignIn } from "./SignIn";
 import { demoCenter, type Layer as LayerName, useUI } from "./ui";
 
 const layers: LayerName[] = ["LIVE", "FLOOD", "LEAKS", "DRAINS", "ROUTE_RISK"];
-// Official MapLibre demo basemap; no Amazon rendering verification implied.
+// Public OpenFreeMap street basemap for LOCAL/DEMO; no Amazon verification implied.
 const mapStyle = isLocal
-  ? "https://demotiles.maplibre.org/style.json"
+  ? "https://tiles.openfreemap.org/styles/liberty"
   : mobileConfig?.mode === "aws"
     ? `https://maps.geo.${mobileConfig.EXPO_PUBLIC_AWS_REGION}.amazonaws.com/v2/styles/Monochrome/descriptor?key=${encodeURIComponent(mobileConfig.EXPO_PUBLIC_LOCATION_MAP_KEY)}`
     : null;
@@ -487,6 +487,7 @@ export function Home() {
                   <TextInput
                     accessibilityLabel="Route name"
                     placeholder="Route name"
+                    placeholderTextColor="#52676d"
                     value={routeName}
                     onChangeText={setRouteName}
                     maxLength={80}
@@ -530,6 +531,19 @@ export function Home() {
                     <Text accessibilityLiveRegion="polite">
                       Loading saved routes…
                     </Text>
+                  ) : null}
+                  {routes.data?.length || routes.isError ? (
+                    <Button
+                      title="Refresh route reports"
+                      disabled={
+                        routes.isFetching ||
+                        risk.isFetching ||
+                        events.isFetching
+                      }
+                      onPress={() => {
+                        void cache.invalidateQueries();
+                      }}
+                    />
                   ) : null}
                   {!routes.isPending &&
                   !routes.isError &&

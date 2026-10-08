@@ -4,7 +4,7 @@ A map-first water intelligence prototype: capture an observation, upload evidenc
 
 Implementation has started. **Live AWS access is BLOCKED_AWAITING_SSO** until the intended `jalnet` profile becomes available in `ap-south-1`. LOCAL/DEMO providers let development continue; they never establish DynamoDB, S3, Nova, Cognito or Amazon Location verification. P0 is not complete.
 
-[Specification](JalNet_Implementation_Plan.md) · [Status](docs/IMPLEMENTATION_STATUS.md) · [Decisions](docs/DECISIONS.md) · [Blockers](docs/BLOCKERS.md) · [Architecture](docs/ARCHITECTURE.md) · [Privacy](docs/PRIVACY.md) · [Local implementation report](docs/IMPLEMENTATION_REPORT.md) · [Backlog](TODO.md) · [Cutover audit](docs/AWS_CUTOVER_CHECKLIST.md) · [Deployment runbook](docs/AWS_DEPLOYMENT_RUNBOOK.md) · [Demo readiness](docs/DEMO_READINESS.md) · [Cedar authorization](docs/CEDAR_AUTHORIZATION.md)
+[Specification](JalNet_Implementation_Plan.md) · [Status](docs/IMPLEMENTATION_STATUS.md) · [Decisions](docs/DECISIONS.md) · [Blockers](docs/BLOCKERS.md) · [Architecture](docs/ARCHITECTURE.md) · [Privacy](docs/PRIVACY.md) · [Local implementation report](docs/IMPLEMENTATION_REPORT.md) · [Backlog](TODO.md) · [Cutover audit](docs/AWS_CUTOVER_CHECKLIST.md) · [Deployment runbook](docs/AWS_DEPLOYMENT_RUNBOOK.md) · [Demo readiness](docs/DEMO_READINESS.md) · [Physical-phone Build It handoff](docs/BUILD_IT_DEVICE_DEMO.md) · [Cedar authorization](docs/CEDAR_AUTHORIZATION.md)
 
 The localhost workflow now requires AWS-origin open-source **Cedar 4.13.0** for private-report reads, upload grants, completion and confirmation. Real policies permit the authenticated owner; the original ownership check remains. Failure closes access, with no silent fallback. Authentication is unchanged; Cedar is not running in Lambda. [Policies and actual-engine HTTP proof](docs/CEDAR_AUTHORIZATION.md) establish local technical integration, not live AWS, hackathon eligibility or P0 completion.
 
@@ -17,10 +17,22 @@ pnpm install --frozen-lockfile
 pnpm demo:seed
 pnpm local:server
 # In another terminal:
-pnpm mobile:start
+pnpm mobile:start:local
 ```
 
-The local API binds `127.0.0.1:8787`; Android emulator requests use `http://10.0.2.2:8787`. The mobile default is visibly labelled LOCAL/DEMO. The demo basemap uses MapLibre's official demo style. Local analysis returns uncertainty and manual classification; local routes are straight-line test corridors, not road navigation. Demo identity strings are confined to the localhost server and are not AWS credentials.
+The local API binds `127.0.0.1:8787`; Android emulator requests use `http://10.0.2.2:8787`. The explicit local launch preset overrides provider mode/API in the launching shell and preserves any ignored cloud `.env`. The mobile mode is visibly labelled LOCAL/DEMO. The basemap uses OpenFreeMap's public Liberty street style with OpenMapTiles/OpenStreetMap attribution and needs internet; the previous countries-only demo style could not support street-level pin placement. Local analysis returns uncertainty and manual classification; local routes are straight-line test corridors, not road navigation. Demo identity strings are confined to the localhost server and are not AWS credentials.
+
+For a USB-connected physical phone, authorize USB debugging and forward both ports with the prepared workspace adb (or your configured adb):
+
+```sh
+.tools/android-sdk/platform-tools/adb -d reverse tcp:8787 tcp:8787
+.tools/android-sdk/platform-tools/adb -d reverse tcp:8081 tcp:8081
+pnpm local:server:usb
+# In another terminal:
+pnpm mobile:start:usb
+```
+
+Use this pair instead of the emulator pair: upload grants also need the USB-loopback address. The [device handoff](docs/BUILD_IT_DEVICE_DEMO.md) gives installation, launch, reset, acceptance and a planned 2:45 judge script. The existing development APK requires Metro and USB; physical installation/camera/location and timed rehearsals remain pending. Do not erase wanted phone drafts to rehearse.
 
 For a first native Android build with the SDK/JDK configured:
 
@@ -28,7 +40,7 @@ For a first native Android build with the SDK/JDK configured:
 pnpm mobile:android
 ```
 
-Expo generates ignored `apps/mobile/android`. A cold native build downloads substantial Gradle/NDK artifacts. The native debug APK built, installed and ran in the emulator. Camera capture/upload, draft recovery, simulated foreground GPS and offline cache were exercised; see the implementation report for exact scope. The user approved emulator testing now and physical-phone tests later.
+Expo generates ignored `apps/mobile/android`. A cold native build downloads substantial Gradle/NDK artifacts. The native debug APK built, installed and ran in the emulator. Camera capture/upload, draft recovery, simulated foreground GPS and offline cache were exercised; see the implementation report for exact scope. The user is connecting a physical phone for the next acceptance gate; emulator results do not establish physical compatibility.
 
 To exercise the local loop: seed the corridor, tap a nearby map pin, capture a JPEG, upload privately, manually choose category/severity, confirm still-active and public-road consent, then submit. View the incident, route warning and provisional points. A second distinct local identity can contribute different evidence through the API tests; copied evidence and self-corroboration are rejected. Do not describe this as real independent witness evidence.
 

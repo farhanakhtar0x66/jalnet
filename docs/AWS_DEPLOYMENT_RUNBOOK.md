@@ -135,4 +135,13 @@ The script never deletes cloud data, receives/purges queue messages, creates inf
 
 Record each boundary in [AWS_CUTOVER_CHECKLIST.md](AWS_CUTOVER_CHECKLIST.md) with sanitized actual evidence, commit and timestamp. A successful dependency command does not verify the full workflow, native key restrictions, physical camera/GPS, eventual behavior under failures or P0 completion. No script changes a document status to VERIFIED.
 
-If SSO/account/model/permission/key/route/API fails: stop dependent live work immediately; keep the exact error privately, record a sanitized blocker, preserve private drafts, and use the explicit LOCAL/DEMO fallback from [DEMO_READINESS.md](DEMO_READINESS.md). Never substitute a fixture silently or broaden a wildcard permission. No cloud reset/delete command is authorized here. No final demo recording until actual AWS and physical acceptance gates pass.
+If SSO/account/model/permission/key/route/API fails: stop dependent live work immediately; keep the exact error privately, record a sanitized blocker and preserve private drafts. Keep `.cutover/`, actual `apps/mobile/.env` and `.local-data` intact for review/retry. Never substitute a fixture silently or broaden a wildcard permission. No cloud reset/delete command is authorized here. No final **live AWS** recording until actual AWS and physical acceptance gates pass. The separate [local Build It gate](BUILD_IT_DEVICE_DEMO.md) does not wait for SSO and cannot establish cloud success.
+
+To deliberately return a USB development phone to the local demonstration, stop only the known AWS-mode Metro you started. If a local API is already running, ensure its upload transport matches the phone; stop/restart only that process if needed. Do not reset local state containing wanted drafts. Repeat the phone's adb reverse for 8787 and 8081, then in separate terminals:
+
+```sh
+pnpm local:server:usb
+pnpm mobile:start:usb
+```
+
+For an emulator use `pnpm local:server` / `pnpm mobile:start:local`. The shell presets explicitly override provider mode/API; private cloud environment files remain unchanged. Refresh the development client and verify the visible **LOCAL/DEMO** disclosure before proceeding. Existing app draft/cache scoping preserves cloud identities separately; local identity and fixtures never become AWS tokens/data. This is an intentional rehearsal switch, not an automatic runtime fallback or cloud deployment rollback.
