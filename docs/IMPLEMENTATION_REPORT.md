@@ -1,5 +1,7 @@
 # JalNet local implementation report
 
+Current strategy2026-10-08: Build It is the primary submission path; SSO only blocks future live AWS acceptance. The owner's new instruction authorizes My Water, a small explainable Water Stress prototype and disclosed vision previews. The historical P1/P2 deferral below describes earlier milestones; see [current feature matrix](FEATURE_STATUS.md) and [Aryan handoff](ARYAN_UI_HANDOFF.md) for the narrowed exception. Final recording/submission remains owner-controlled; no eligibility or P0-completion claim.
+
 Date: 2026-10-08, Asia/Kolkata. This is an implemented and tested **local milestone**, not P0 completion. The user authorized START, public GitHub publication/team access, local development while AWS SSO is unavailable, and emulator testing before physical-phone testing.
 
 **Live AWS: BLOCKED_AWAITING_SSO.** Intended profile: `jalnet`; region: `ap-south-1`. No AWS credential probe, deployment, resource access, model call or live integration was performed. AWS modules remain IMPLEMENTED_UNVERIFIED. No fake/static credentials, placeholder AWS keys or LocalStack were introduced.
@@ -89,7 +91,7 @@ P0 remains incomplete. Important remaining work includes:
 - Token refresh/revocation, user erasure, operational metrics/alarms, central copy keys, the full accessibility/physical performance matrix remain incomplete. Scoped freshness/provenance styling and basic accessible states are now implemented locally.
 - Cloud seed/reset must be scoped against actual deployment before implementation; five live rehearsals, architecture freeze, deadline verification and submission video/write-up remain pending. The user selected MIT licensing during cutover cleanup.
 
-P1/P2 stay deferred: Water Stress inputs/normalization, simulated tanks, demo tankers, official alerts, video, push, alternative routes, background learning, HeatSafe, advanced DrainScan, suppliers/payments/hardware/municipal/predictive systems.
+At the original local milestone P1/P2 stayed deferred. The later Build It strategy authorizes only My Water, local sample Water Stress and clearly disclosed TankerOS/HeatSafe previews. Official alerts, video, push, alternative routes, background learning, real suppliers/payments/hardware/municipal/predictive systems remain deferred.
 
 ## Local demo / next integration boundary
 

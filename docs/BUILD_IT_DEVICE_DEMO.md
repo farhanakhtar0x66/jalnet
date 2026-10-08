@@ -2,6 +2,8 @@
 
 Prepared 2026-10-08. Cedar authorization is frozen at **9422fc2**; no authorization, policy or AWS architecture change is part of this increment. The target phone installed/launched and completed a real-camera LOCAL/DEMO report → warning → +2 flow. **Remaining physical acceptance and final recording are pending.** Live AWS remains **BLOCKED_AWAITING_SSO**. This local demonstration does not declare hackathon eligibility or P0 completion.
 
+The owner accepted the physical milestone at **087a225** and froze local features. Continue remaining tests one at a time using the [actual acceptance log](PHYSICAL_ACCEPTANCE.md), [five-rehearsal checklist](FIVE_REHEARSALS.md) and [final recording/submission assets](BUILD_IT_SUBMISSION_ASSETS.md). Their unexecuted items remain pending; these documents introduce no application/authorization/architecture change.
+
 ## Read-only audit and compatibility boundary
 
 The existing debug development APK is `apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk`, package `org.jalnet.mobile`, version 1.0.0. Executed APK inspection found min SDK 24 (Android 7.0 install floor), target SDK 36 and native libraries for arm64-v8a, armeabi-v7a, x86 and x86_64. This is artifact evidence, not proof that a particular phone works. Expo Go cannot load the native MapLibre module; this APK requires a running Metro server and USB forwarding. It is not an offline standalone submission build.

@@ -3,12 +3,14 @@ import { openDatabaseAsync } from "expo-sqlite";
 import type { z } from "zod";
 import { api, NetworkError, storageScope } from "./api";
 
-const dbPromise = openDatabaseAsync("jalnet-cache.db").then(async (db) => {
-  await db.execAsync(
-    "CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, body TEXT NOT NULL, savedAt INTEGER NOT NULL)",
-  );
-  return db;
-});
+export const dbPromise = openDatabaseAsync("jalnet-cache.db").then(
+  async (db) => {
+    await db.execAsync(
+      "CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, body TEXT NOT NULL, savedAt INTEGER NOT NULL)",
+    );
+    return db;
+  },
+);
 export async function cachedApi<T>(path: string, schema: z.ZodType<T>) {
   // Account scope comes from the authenticated API during PKCE sign-in, not a
   // decoded bearer payload. Reauthentication preserves that account's drafts.

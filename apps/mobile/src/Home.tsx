@@ -29,6 +29,7 @@ import { z } from "zod";
 import { api, isLocal, mobileConfig } from "./api";
 import { Button } from "./Button";
 import { cachedApi } from "./cache";
+import { WaterHub } from "./features/WaterHub";
 import { foregroundFix } from "./location";
 import { ReportFlow } from "./ReportFlow";
 import { SignIn } from "./SignIn";
@@ -70,7 +71,7 @@ export function Home() {
   const selected = useUI((s) => s.selected);
   const accuracy = useUI((s) => s.accuracyM);
   const [sheet, setSheet] = useState<
-    "camera" | "layers" | "routes" | "profile" | null
+    "camera" | "layers" | "routes" | "profile" | "water" | null
   >(null);
   const [bbox, setBbox] = useState<[number, number, number, number]>([
     77.2, 28.6, 77.22, 28.63,
@@ -230,7 +231,7 @@ export function Home() {
         <Text style={styles.brand}>JalNet</Text>
         <Text style={styles.mode}>
           {isLocal
-            ? "LOCAL / DEMO · AWS blocked awaiting SSO"
+            ? "LOCAL / DEMO · No live AWS services"
             : "AWS providers · live verification pending"}
         </Text>
       </View>
@@ -433,6 +434,7 @@ export function Home() {
         </Text>
       </View>
       <View style={styles.controls}>
+        <Button title="My Water" onPress={() => setSheet("water")} />
         <Button title="Layers" onPress={() => setSheet("layers")} />
         <Button title="Locate" disabled={busy} onPress={recenter} />
       </View>
@@ -452,6 +454,8 @@ export function Home() {
         <View style={styles.modal}>
           {sheet === "camera" ? (
             <ReportFlow close={() => setSheet(null)} />
+          ) : sheet === "water" ? (
+            <WaterHub close={() => setSheet(null)} />
           ) : (
             <ScrollView contentContainerStyle={styles.sheet}>
               {sheet === "layers" ? (
