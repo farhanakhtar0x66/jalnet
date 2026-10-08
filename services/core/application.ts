@@ -25,6 +25,8 @@ import { distanceM, encodePolyline } from "../../packages/geo/src/index.js";
 import type {
   AnalysisProvider,
   EvidenceProvider,
+  ReportAction,
+  ReportAuthorizer,
   Repository,
   RouteProvider,
 } from "./ports.js";
@@ -80,6 +82,7 @@ export class Application {
     readonly analysis: AnalysisProvider,
     readonly routeProvider: RouteProvider,
     private readonly clock = () => new Date().toISOString(),
+    private readonly reportAuthorizer?: ReportAuthorizer,
   ) {}
   private requireFreshCapture(capturedAt: string) {
     const age = Date.parse(this.clock()) - Date.parse(capturedAt);
@@ -90,9 +93,30 @@ export class Application {
         "Capture must be within the past day; retake stale evidence or correct the device clock",
       );
   }
-  async ownedReport(userId: string, id: string): Promise<Report> {
+  async ownedReport(
+    userId: string,
+    id: string,
+    action: ReportAction = "ReadReport",
+  ): Promise<Report> {
     const report = await this.repository.getReport(id);
     if (!report) return fail("REPORT_NOT_FOUND", 404, "Report not found");
+    if (
+      this.reportAuthorizer &&
+      (await this.reportAuthorizer.authorize({
+        principalId: userId,
+        action,
+        reportId: report.id,
+        ownerId: report.userId,
+      })) !== "ALLOW"
+    )
+      return fail(
+        "FORBIDDEN",
+        403,
+        report.userId === userId
+          ? "Private report access denied"
+          : "Report belongs to another user",
+      );
+    // Defense in depth, including the unchanged AWS composition.
     if (report.userId !== userId)
       return fail("FORBIDDEN", 403, "Report belongs to another user");
     return report;
@@ -129,7 +153,11 @@ export class Application {
   async presign(userId: string, input: unknown) {
     const request = presignRequestSchema.parse(input);
     for (let attempt = 0; attempt < 5; attempt++) {
-      const report = await this.ownedReport(userId, request.reportId);
+      const report = await this.ownedReport(
+        userId,
+        request.reportId,
+        "PresignReport",
+      );
       this.requireFreshCapture(report.capturedAt);
       if (!["DRAFT", "UPLOADING"].includes(report.status))
         return fail(
@@ -181,7 +209,7 @@ export class Application {
     );
   }
   async completeUpload(userId: string, id: string) {
-    const report = await this.ownedReport(userId, id);
+    const report = await this.ownedReport(userId, id, "CompleteUpload");
     if (["NEEDS_CONFIRMATION", "ACCEPTED", "MERGED"].includes(report.status))
       return report;
     this.requireFreshCapture(report.capturedAt);
@@ -228,7 +256,7 @@ export class Application {
       ],
     };
     if (!(await this.repository.putReport(next, "UPLOADING")))
-      return this.ownedReport(userId, id);
+      return this.ownedReport(userId, id, "CompleteUpload");
     return next;
   }
   async analyze(id: string) {
@@ -290,7 +318,7 @@ export class Application {
   async confirm(userId: string, id: string, input: unknown) {
     const observation = confirmReportSchema.parse(input);
     for (let attempt = 0; attempt < 5; attempt++) {
-      const report = await this.ownedReport(userId, id);
+      const report = await this.ownedReport(userId, id, "ConfirmReport");
       if (report.mergedEventId)
         return { report, eventId: report.mergedEventId, replay: true };
       this.requireFreshCapture(report.capturedAt);

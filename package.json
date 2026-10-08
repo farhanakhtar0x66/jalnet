@@ -21,6 +21,7 @@
     "mobile:android": "pnpm --filter @jalnet/mobile android",
     "mobile:bundle": "pnpm --filter @jalnet/mobile bundle:android",
     "local:server": "node --import tsx scripts/dev-server.ts",
+    "cedar:check": "node --import tsx scripts/check-cedar.ts",
     "demo:seed": "node --import tsx scripts/seed-demo.ts --local",
     "demo:reset": "node --import tsx scripts/reset-demo.ts --local",
     "smoke:local": "node --import tsx scripts/smoke-local.ts"
@@ -45,6 +46,7 @@
     "@aws-sdk/client-sts": "3.1147.0",
     "@aws-sdk/lib-dynamodb": "3.1147.0",
     "@aws-sdk/s3-request-presigner": "3.1147.0",
+    "@cedar-policy/cedar-wasm": "4.13.0",
     "aws-cdk-lib": "2.272.0",
     "constructs": "10.8.1",
     "h3-js": "4.5.0",

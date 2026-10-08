@@ -105,7 +105,7 @@ The user's SSO-delay instruction supersedes the original prohibition on replacin
 
 ### D-14 — Toolchain and strict version pins
 
-Official Expo SDK57 template and compatibility docs supplied RN0.86.3/React19.2.3/TypeScript6.0.3; MapLibre11.5 requires the new native architecture. Selected Node24.21.0/pnpm10.34.6/JDK17 and Android36. Native projects are generated/ignored; app.json remains the source. Metro consumes TS-source workspace packages, so their internal TS import uses `.ts` with no-emit typecheck enabled. The official installed API37.1 phone emulator is a temporary test device, not physical-phone evidence.
+Official Expo SDK57 template and compatibility docs supplied RN0.86.3/React19.2.3/TypeScript6.0.3; MapLibre11.5 requires the new native architecture. Selected Node 24.21.0/pnpm10.34.6/JDK17 and Android36. Native projects are generated/ignored; app.json remains the source. Metro consumes TS-source workspace packages, so their internal TS import uses `.ts` with no-emit typecheck enabled. The official installed API37.1 phone emulator is a temporary test device, not physical-phone evidence.
 
 ### D-15 — Concrete prototype policies
 
@@ -129,7 +129,7 @@ The user explicitly set AWS state to BLOCKED_AWAITING_SSO, profile jalnet, regio
 
 Prototype policies: 20 drafts/user/day; five upload grants/report and 100/user/day; 30 route provider attempts/user/day; five-minute, maximum 200-entry warm-process owner-scoped route cache. Failed provider attempts consume quota. Upload retries reuse the owned random key. H3 queries have 512-cell/eight-concurrency/100-record page/five-page/1,000-candidate caps; fail on overflow instead of silently skipping a crowded cell. Filter/rank public current events before the 200-card response cap. These are engineering bounds, not measured live quotas or budget proof.
 
-Offline SQLite cache lasts 24 hours and is token-hash scoped. Only errors raised at the fetch transport boundary allow fallback, because Android native fetch uses Error rather than browser TypeError. Cached conditions are explicitly dated and never represented as current route safety. The emulator restart test exposed and verified this fix. A working retry action refreshes API queries after connectivity returns.
+Offline SQLite cache lasts 24 hours and is scoped by a hash of the authenticated account scope. Only errors raised at the fetch transport boundary allow fallback, because Android native fetch uses Error rather than browser TypeError. Cached conditions are explicitly dated and never represented as current route safety. The emulator restart test exposed and verified this fix. A working retry action refreshes API queries after connectivity returns.
 
 ### D-20 — Atomic final confirmation and evidence continuity
 
@@ -144,3 +144,13 @@ Foreground location uses an explicitly removed watch with a 15-second timeout in
 ### D-22 — Analysis lease prevents parallel model attempts
 
 Acquire a conditional 90-second report analysis lease in the ledger guard namespace while atomically checking ANALYZING status. It exceeds the 60-second worker deadline and expires before the six-minute SQS visibility retry. A busy duplicate returns a retryable failure; completed reports return without another invocation. This is implemented/tested with local concurrent workers; actual SQS crash/redelivery/model-cost behavior remains IMPLEMENTED_UNVERIFIED until SSO testing.
+
+### D-23 — Mandatory Cedar in the local private-report composition
+
+At the user's explicit approval, add exact official `@cedar-policy/cedar-wasm@4.13.0` after an isolated successful Node 24.21.0 compatibility probe. Use the Node subpath; no browser/Hermes integration or runtime rewrite. A typed ReportAuthorizer gates `ownedReport()` for the existing ReadReport, PresignReport, CompleteUpload and ConfirmReport operations, before side effects/replay. Principal comes from the unchanged trusted server authentication mapping, resource/owner from persisted Repository data. Keep the original ownership comparison as defense in depth; preserve canonical missing-auth 401, missing-report 404 and forbidden 403.
+
+Local server creation requires successful real Cedar initialization; it has no permissive/legacy fallback or disable switch. Strict schema/policy validation and strict request validation precede evaluation. Initialization, request/evaluation failure, unknown action and any nonempty error diagnostics/warnings fail closed and discard internals. A real overflow-policy test demonstrates Cedar Allow plus diagnostics; JalNet returns a redacted 503 and grants/writes nothing. A real explicit forbid denies an otherwise permitted owner through HTTP for all four actions.
+
+Existing draft creation authenticates and assigns ownership before any existing-report resource exists. Upload PUT redeems the short-lived capability issued after authorization; internal analysis is a worker operation, not a user-access endpoint. These audited boundaries introduce no new role, product permission or sharing feature. Accepted replay/conflict branches retain their corresponding mandatory action.
+
+The core constructor's additive authorizer parameter remains optional for the unchanged AWS factory and 71 baseline tests. The real local factory always supplies Cedar. Lambda/IAM/CDK/Cognito/AWS providers and deployment guards are unchanged; Cedar loader/WASM/policy asset packaging and live Lambda execution require a separate future gate. Build It local technical evidence, organizer/submission eligibility and live AWS/P0 acceptance remain separate. All 111 tests pass (40 new actual-engine tests); measurements and exact checks are in IMPLEMENTATION_REPORT.md. Apache license/NOTICE/upstream third-party notices are retained separately from MIT.

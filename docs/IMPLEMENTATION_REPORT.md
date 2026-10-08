@@ -149,3 +149,42 @@ The commands below actually executed after the final guard fixes, using the pinn
 | Source-plan comparison and `git diff --check` | PASS; original plan unchanged byte for byte, authored diff has no whitespace errors. |
 
 The updated emulator flow also rendered the account-scoped local camera capture/private upload and manual-confirmation screen, explicit LOCAL/DEMO/no-model copy, fresh/source/expiry incident card, and suppression/refresh of an outdated route check. The capture remained private in NEEDS_CONFIRMATION during this walkthrough. The earlier restart/offline/GPS evidence above belongs to the original milestone; those tests are not claimed as a new live or physical-device run. No final demo was recorded. P0 remains incomplete, with AWS-dependent work IMPLEMENTED_UNVERIFIED/BLOCKED_AWAITING_SSO.
+
+## Approved narrow Cedar integration — 2026-10-08
+
+The isolated compatibility test ran **before application behavior changed**, in `/private/tmp/jalnet-cedar-compat` with its own exact dependency manifest. Official `@cedar-policy/cedar-wasm@4.13.0` using `@cedar-policy/cedar-wasm/nodejs` loaded in Node 24.21.0, darwin/arm64; actual schema/policy validation passed, owner returned allow and foreign principal deny with empty error diagnostics. Cold import 25.12 ms; first validation 81.69 ms. No AWS account/network service or credential provider was needed by policy evaluation. Root dependency installation followed this result; the lock pins version 4.13.0 and the previously inspected integrity.
+
+The typed ReportAuthorizer is additive; all existing repository/evidence/analysis/route interfaces and cloud composition remain. Local server creation always initializes the real Cedar engine and validated repository-owned schema/policy before constructing the application/server. A failure prevents listening, with no fallback/disable switch. `ownedReport()` requires the corresponding action before access or side effects, obtains owner/resource from persisted Repository data and retains the existing owner comparison. Local authentication mapping is unchanged and cannot be supplied through request body/query. Cedar does not authenticate or decode JWTs.
+
+Production policy: permit the User principal for ReadReport, PresignReport, CompleteUpload and ConfirmReport on Report when `resource.owner == principal`. All other decisions deny. Full policy, schema, path audit and test-only policies are in [CEDAR_AUTHORIZATION.md](CEDAR_AUTHORIZATION.md). Creation assigns an authenticated owner to a new draft; PUT redeems the grant issued after authorization; internal analysis remains a worker operation. Existing-resource HTTP access has no direct repository bypass. Completion's conflict return and all replay paths retain the corresponding action.
+
+Forty added tests use the actual engine: **22 adapter/engine tests and 18 actual HTTP tests**. No engine is mocked. All four owner operations are allowed by the production policy and foreign operations denied. A real explicit forbid overrides the owner permit through HTTP for each action, returning 403 with byte-identical state, zero upload-grant/evidence-read/report-write/worker calls, no incident and no droplet award. Accepted replay is also gated after restart; a broad test permit still cannot bypass the original ownership check. Unknown/invalid input, invalid schema/policy, actual engine request failure, missing/forged auth and canonical 401/403/404 are covered.
+
+A strictly validated test overflow permit causes **real Cedar allow plus one policy error**. JalNet rejects nonempty error diagnostics despite allow. Actual HTTP returns generic 503 without policy/overflow/owner data and with zero effects. Initialization/parser/engine exceptions and warnings also fail closed; no sensitive diagnostic is returned.
+
+| Executed command | Actual result / scope |
+|---|---|
+| Isolated pinned install + `node probe.mjs` | PASS before application changes; actual engine schema validation / owner allow / foreign deny; no AWS calls. |
+| `CI=true pnpm install --frozen-lockfile` | PASS after dependency addition. An offline attempt lacked cached tarballs and rebuilt node_modules; a test launched alongside it could not find Vitest. Dependencies were restored before the complete passing sequential rerun. No regression pass was inferred from that interrupted run. |
+| `pnpm exec vitest run tests/cedar-authorization.test.ts tests/cedar-http.test.ts` | PASS: 40 tests across 2 dedicated suites. An initial new workflow test used the wrong existing route response field; corrected to `route.id` before final passes. |
+| `pnpm format:check`, `pnpm lint` | PASS; source formatting/lint, also rechecked after final documentation. |
+| `pnpm typecheck` | PASS, root and mobile TypeScript. |
+| `pnpm synth` | PASS, existing AWS CloudFormation and all six function assets synthesize. No deploy; no Cedar loader/WASM integrated into Lambda. |
+| `pnpm test` | PASS: **12 suites / 111 tests**. All 71 baseline tests preserved plus 40 new actual-engine tests. |
+| `pnpm mobile:bundle` | PASS: Android Hermes export, 916 modules, 2.8 MB; mobile source unchanged. No new native APK/physical-phone test claimed. |
+| `pnpm demo:reset`, `pnpm demo:seed`, `pnpm local:server`, `pnpm smoke:local` | PASS after confirming no localhost server was listening. Reset only ignored LOCAL/DEMO data; Cedar-required server completed original JPEG → manual confirmation → fusion → route warning → ledger 10/7 → replay smoke. |
+| `pnpm cedar:check` | PASS: 1,000 real adapter decisions over all four actions, 500 allow/500 deny; runtime/version asserted and measured without AWS. |
+| Git/source/upstream-notice review | Authored diff whitespace clean; supplied plan unchanged; all three copied upstream notice/license Git blob hashes match. No AWS/mobile/infrastructure file or deployment guard was rewritten. |
+
+Dedicated adapter measurement from a fresh Node process after other checks: **138.398 ms initialization** (WASM load, policy/schema file reads and strict validation); **1.042 ms median / 2.016 ms p95** over 1,000 serial decisions. Includes input checking, schema-validated real-engine evaluation and diagnostics checking. No performance guarantee, memory benchmark or Lambda extrapolation is made. Initial parallel-run measurement was 137.334 ms / 1.331 ms median / 2.804 ms p95; the isolated final measurement above is the reported one.
+
+Build It technical runtime proof now exists locally, with AWS origin and Apache-2.0 attribution retained separately from project MIT. Overall eligibility/submission evidence, organizer kickoff/original-work timing and final recording remain pending. Live AWS remains **BLOCKED_AWAITING_SSO**, profile `jalnet`, region `ap-south-1`; expected account/role, actual resources/model/Maps key, native Maps restrictions and physical phone remain pending. First eventual command: `aws sts get-caller-identity --profile jalnet`, with private account/role comparison and immediate stop on mismatch. Optional Cedar Lambda packaging requires explicit loader/WASM/policy assets, isolated artifact loading and actual deployed runtime proof; none has run. **No live AWS integration or P0 completion is claimed.**
+
+Exact change inventory for this increment (including the accepted pre-approval assessment):
+
+- Manifests: `package.json`, `pnpm-lock.yaml`.
+- Policies: `policies/jalnet.cedarschema`, `policies/private-reports.cedar`.
+- Runtime: `services/core/ports.ts`, `services/core/application.ts`, `services/providers/cedar-authorization.ts`, `services/local/server.ts`, `scripts/dev-server.ts`, `scripts/check-cedar.ts`.
+- Tests: `tests/cedar-fixtures.ts`, `tests/cedar-authorization.test.ts`, `tests/cedar-http.test.ts`.
+- Documentation: `README.md`, `docs/ARCHITECTURE.md`, `docs/AWS_OPEN_SOURCE_FEASIBILITY.md`, `docs/BLOCKERS.md`, `docs/CEDAR_AUTHORIZATION.md`, `docs/DECISIONS.md`, `docs/IMPLEMENTATION_REPORT.md`, `docs/IMPLEMENTATION_STATUS.md`.
+- Upstream credits: `third-party/cedar/README.md`, `third-party/cedar/LICENSE`, `third-party/cedar/NOTICE`, `third-party/cedar/THIRD_PARTY_LICENSES.txt`.

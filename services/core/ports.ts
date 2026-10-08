@@ -9,6 +9,23 @@ import type {
 } from "../../packages/contracts/src/index.js";
 import type { Point } from "../../packages/geo/src/index.js";
 
+export const reportActions = [
+  "ReadReport",
+  "PresignReport",
+  "CompleteUpload",
+  "ConfirmReport",
+] as const;
+export type ReportAction = (typeof reportActions)[number];
+export interface ReportAuthorizationRequest {
+  readonly principalId: string;
+  readonly action: ReportAction;
+  readonly reportId: string;
+  readonly ownerId: string;
+}
+export interface ReportAuthorizer {
+  authorize(request: ReportAuthorizationRequest): Promise<"ALLOW" | "DENY">;
+}
+
 export interface Commit {
   report?: Report;
   expectedReportStatus?: Report["status"];

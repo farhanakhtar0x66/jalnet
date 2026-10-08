@@ -4,7 +4,17 @@ Planning audit: 2026-10-08, Asia/Kolkata. Source: [JalNet_Implementation_Plan.md
 
 Implementation was authorized by explicit user **START**. The user subsequently directed autonomous local implementation while live AWS is **BLOCKED_AWAITING_SSO**, profile `jalnet`, region `ap-south-1`, and approved emulator testing until a physical phone is available. The repository is public; Aryanxp1 has write access and shubhrgunjan’s write invitation is pending.
 
-Current milestone: native map/report/route/profile shell, strict contracts/domain rules, deterministic LOCAL/DEMO HTTP and file providers, AWS SDK providers and CDK infrastructure. Native Gradle APK build/install/runtime, emulator camera capture/private localhost upload, draft restart recovery, simulated foreground GPS and disk-backed offline cache have executed. P0 cutover hardening adds explicit configuration, private account/role guards, bounded staged smoke, failure injection and demo/runbook preparation. Ten suites / 71 tests are the current suite (27 added); exact final results belong in [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md). No AWS deployment or live integration has run; **P0 is not complete**.
+Current milestone: native map/report/route/profile shell, strict contracts/domain rules, deterministic LOCAL/DEMO HTTP and file providers, AWS SDK providers and CDK infrastructure. Native Gradle APK build/install/runtime, emulator camera capture/private localhost upload, draft restart recovery, simulated foreground GPS and disk-backed offline cache have executed. P0 cutover hardening adds explicit configuration, private account/role guards, bounded staged smoke, failure injection and demo/runbook preparation. The approved narrow Cedar integration now makes real authorization mandatory for local private-report access. **12 suites / 111 tests pass: all 71 baseline tests plus 40 new Cedar tests**; exact results belong in [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md). No AWS deployment or live integration has run; **P0 is not complete**.
+
+## Separate open-source and cloud acceptance gates
+
+| Gate | Current evidence / status |
+|---|---|
+| Local Cedar runtime / required authorization | PASS locally: pinned 4.13.0 on Node 24.21.0; strict schema/policies; real owner allow/foreign deny; real HTTP owner forbid for all four actions with zero effects; redacted policy-error rejection. See [boundary audit](CEDAR_AUTHORIZATION.md). |
+| Local regression / existing workflow | PASS: 111 tests, formatting/lint/types/synth/Android export and clean Cedar-enabled LOCAL/DEMO HTTP smoke. No mobile UI or AWS composition change. |
+| Build It submission acceptance | Pending official kickoff/original-work timing, participation/student/submission review and final judge evidence. Local runtime use does not certify overall hackathon eligibility. No final demo recorded. |
+| Cedar in Lambda | Not composed/packaged/run; loader/WASM/policy assets and deployed Node24 runtime remain unverified. This optional future gate is separate from existing AWS authorization. |
+| Existing live AWS P0 acceptance | **BLOCKED_AWAITING_SSO**, `jalnet`, `ap-south-1`; existing service/native Maps/physical-phone gates remain. No AWS row is promoted by Cedar. |
 
 ## Repository publication and access evidence
 
@@ -230,3 +240,11 @@ Executed a one-off Node stdin validation of the planning files: exactly three do
 - Local fixes cover interrupted upload/scheduling retry, stale/future captures, timed-out/malformed model and route providers, application JWT-shaped rejection, offline redaction and account-scoped drafts/cache. Scoped Lambda logging is asserted on actual synthesized IAM.
 - Final current gate passed: format/lint/types/synth, **10 suites / 71 tests (27 added)**, Android Hermes export and clean-seeded local HTTP smoke. Updated emulator capture/manual screen and freshness/provenance card rendered in LOCAL/DEMO. Detailed executed evidence is in IMPLEMENTATION_REPORT.md.
 - MIT added at the user's direction. P1/P2 remain frozen; AWS BLOCKED_AWAITING_SSO and final live demo/physical acceptance gates remain blocked.
+
+### Approved narrow Cedar integration
+
+- Before changing application behavior, an isolated scratch install of Cedar 4.13.0 loaded/evaluated on pinned Node 24.21.0, darwin/arm64: schema strictly validated, owner allowed, foreign principal denied. Import 25.12 ms, initial validation 81.69 ms; no AWS calls.
+- Added typed ReportAuthorizer and mandatory local composition; `ownedReport()` obtains owner/resource exclusively from Repository and evaluates ReadReport/PresignReport/CompleteUpload/ConfirmReport. Trusted server identity mapping, original owner comparison, canonical 401/403/404 and all existing providers/cloud infrastructure remain.
+- Forty dedicated actual-engine tests pass (22 adapter/engine, 18 HTTP). Explicit forbids deny otherwise permitted owners before grant/write/worker/fusion/award; accepted replay and conflict return cannot use a weaker action. Real overflow diagnostics reject engine Allow with redacted 503.
+- Complete regression **12 suites / 111 tests** passes, preserving every baseline test. Format/lint/types/synth/Android bundle and existing clean local smoke pass. `pnpm cedar:check`: 138.40 ms initialization, 1.042 ms median/2.016 ms p95 over 1,000 actual decisions (500 allow/500 deny), local-machine measurements only.
+- Preserved upstream Apache-2.0 license/notice material separately from project MIT. Local Build It technical evidence and pending submission gate stay separate from live AWS/P0 acceptance. No final recording, P1/P2 work or Cedar-in-Lambda claim.

@@ -4,7 +4,9 @@ A map-first water intelligence prototype: capture an observation, upload evidenc
 
 Implementation has started. **Live AWS access is BLOCKED_AWAITING_SSO** until the intended `jalnet` profile becomes available in `ap-south-1`. LOCAL/DEMO providers let development continue; they never establish DynamoDB, S3, Nova, Cognito or Amazon Location verification. P0 is not complete.
 
-[Specification](JalNet_Implementation_Plan.md) · [Status](docs/IMPLEMENTATION_STATUS.md) · [Decisions](docs/DECISIONS.md) · [Blockers](docs/BLOCKERS.md) · [Architecture](docs/ARCHITECTURE.md) · [Privacy](docs/PRIVACY.md) · [Local implementation report](docs/IMPLEMENTATION_REPORT.md) · [Backlog](TODO.md) · [Cutover audit](docs/AWS_CUTOVER_CHECKLIST.md) · [Deployment runbook](docs/AWS_DEPLOYMENT_RUNBOOK.md) · [Demo readiness](docs/DEMO_READINESS.md)
+[Specification](JalNet_Implementation_Plan.md) · [Status](docs/IMPLEMENTATION_STATUS.md) · [Decisions](docs/DECISIONS.md) · [Blockers](docs/BLOCKERS.md) · [Architecture](docs/ARCHITECTURE.md) · [Privacy](docs/PRIVACY.md) · [Local implementation report](docs/IMPLEMENTATION_REPORT.md) · [Backlog](TODO.md) · [Cutover audit](docs/AWS_CUTOVER_CHECKLIST.md) · [Deployment runbook](docs/AWS_DEPLOYMENT_RUNBOOK.md) · [Demo readiness](docs/DEMO_READINESS.md) · [Cedar authorization](docs/CEDAR_AUTHORIZATION.md)
+
+The localhost workflow now requires AWS-origin open-source **Cedar 4.13.0** for private-report reads, upload grants, completion and confirmation. Real policies permit the authenticated owner; the original ownership check remains. Failure closes access, with no silent fallback. Authentication is unchanged; Cedar is not running in Lambda. [Policies and actual-engine HTTP proof](docs/CEDAR_AUTHORIZATION.md) establish local technical integration, not live AWS, hackathon eligibility or P0 completion.
 
 ## Development
 
@@ -49,11 +51,12 @@ pnpm typecheck
 pnpm synth
 pnpm test
 pnpm mobile:bundle
+pnpm cedar:check
 # With a separate clean seeded local server:
 pnpm smoke:local
 ```
 
-Infrastructure tests inspect the actual `cdk.out/JalNetDev.template.json`, so synth precedes tests. The current cutover local gate passed **71 tests across 10 suites**; exact results are in the [implementation report](docs/IMPLEMENTATION_REPORT.md). Earlier [GitHub CI](https://github.com/farhanakhtar0x66/jalnet/actions/runs/37702139384) passed the original milestone checks (44 tests) without AWS credentials or deployment permissions. SDK-mocked tests verify adapter behavior only. No live integration is inferred from a passed test or synthesized template.
+Infrastructure tests inspect the actual `cdk.out/JalNetDev.template.json`, so synth precedes tests. The current local gate passed **111 tests across 12 suites**, preserving all 71 baseline tests and adding 40 actual-engine Cedar tests; exact results are in the [implementation report](docs/IMPLEMENTATION_REPORT.md). Earlier [GitHub CI](https://github.com/farhanakhtar0x66/jalnet/actions/runs/37702139384) passed the original milestone checks (44 tests) without AWS credentials or deployment permissions. SDK-mocked tests verify adapter behavior only. No live integration is inferred from a passed test or synthesized template.
 
 ## AWS readiness, after SSO
 
@@ -78,4 +81,4 @@ Water Stress, My Water, TankerOS, IoT, video, push, alternative routes, HeatSafe
 
 Target: WeMakeDevs × AWS Environmental Hacks, Heat and Water track, October 8–11, 2026. Verify exact submission hours from the [official schedule](https://www.wemakedevs.org/aws/env/schedule) and [rules](https://www.wemakedevs.org/aws/env/rules).
 
-The owner supplied the specification. OpenAI Codex assisted with planning, repository setup, application/backend/infrastructure code and tests. The user selected the [MIT project license](LICENSE); Expo's generated starter license is retained in [apps/mobile/LICENSE](apps/mobile/LICENSE). Dependency and map-source attribution remains required. Aryanxp1 has write access; shubhrgunjan’s write invitation remains pending acceptance.
+The owner supplied the specification. OpenAI Codex assisted with planning, repository setup, application/backend/infrastructure code and tests. The user selected the [MIT project license](LICENSE); Expo's generated starter license is retained in [apps/mobile/LICENSE](apps/mobile/LICENSE). Cedar is Apache-2.0; unmodified upstream [license/notice material](third-party/cedar/README.md) is retained separately. Dependency and map-source attribution remains required. Aryanxp1 has write access; shubhrgunjan’s write invitation remains pending acceptance.
