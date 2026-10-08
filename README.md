@@ -2,11 +2,13 @@
 
 A map-first water intelligence prototype: capture an observation, upload evidence privately, review a conservative assessment, confirm the report, update a fused incident and warn when it intersects a saved route. Droplets reward accepted contributions and independently supported usefulness.
 
-Implementation has started. **Live AWS access is BLOCKED_AWAITING_SSO** until the intended `jalnet` profile becomes available in `ap-south-1`. LOCAL/DEMO providers let development continue; they never establish DynamoDB, S3, Nova, Cognito or Amazon Location verification. P0 is not complete.
+The primary hackathon path is **Build It**, using real mandatory Cedar authorization locally. AWS SSO is not a dependency for this local submission. **Future live AWS access remains BLOCKED_AWAITING_SSO**, profile `jalnet`, region `ap-south-1`; its architecture and guarded deployment path are preserved. LOCAL/DEMO providers never establish DynamoDB, S3, Nova, Cognito or Amazon Location verification. Overall eligibility and P0 completion are not claimed.
 
 [Specification](JalNet_Implementation_Plan.md) · [Status](docs/IMPLEMENTATION_STATUS.md) · [Decisions](docs/DECISIONS.md) · [Blockers](docs/BLOCKERS.md) · [Architecture](docs/ARCHITECTURE.md) · [Privacy](docs/PRIVACY.md) · [Local implementation report](docs/IMPLEMENTATION_REPORT.md) · [Backlog](TODO.md) · [Cutover audit](docs/AWS_CUTOVER_CHECKLIST.md) · [Deployment runbook](docs/AWS_DEPLOYMENT_RUNBOOK.md) · [Demo readiness](docs/DEMO_READINESS.md) · [Physical-phone Build It handoff](docs/BUILD_IT_DEVICE_DEMO.md) · [Cedar authorization](docs/CEDAR_AUTHORIZATION.md)
 
 The localhost workflow now requires AWS-origin open-source **Cedar 4.13.0** for private-report reads, upload grants, completion and confirmation. Real policies permit the authenticated owner; the original ownership check remains. Failure closes access, with no silent fallback. Authentication is unchanged; Cedar is not running in Lambda. [Policies and actual-engine HTTP proof](docs/CEDAR_AUTHORIZATION.md) establish local technical integration, not live AWS, hackathon eligibility or P0 completion.
+
+**My Water** calculates remaining litres and depletion from entered capacity, level and daily consumption, persists validated state locally and advances one hypothetical day on request. Reset restores 1,500 L / 60% / 300 L per day (900 L / 72h). Per-field labels distinguish USER-ENTERED, DEMO FIXTURE and SIMULATED values; no meter/IoT connection or guaranteed supply forecast. **Water Stress** is a calculated DEMO INDICATOR with six fictional editable pressures, transparent weights/contributions and missing-data coverage; it is not an official/current environmental measurement. **TankerOS** has fictional display-only supplier cards, with no booking/payment/contact; **HeatSafe** is PLANNED. [Actual feature matrix](docs/FEATURE_STATUS.md) · [Aryan's UI handoff](docs/ARYAN_UI_HANDOFF.md).
 
 ## Development
 
@@ -32,7 +34,7 @@ pnpm local:server:usb
 pnpm mobile:start:usb
 ```
 
-Use this pair instead of the emulator pair: upload grants also need the USB-loopback address. The [device handoff](docs/BUILD_IT_DEVICE_DEMO.md) gives installation, launch, reset, acceptance and a planned 2:45 judge script. The existing development APK requires Metro and USB. Installation, real staged camera capture/private upload, incident/route warning/+2 ledger and route refresh passed on the Redmi Note 9 Pro Max reporting Android16/API36. Remaining permission/location/recovery/usability checks and timed rehearsals are pending. Do not erase wanted phone drafts to rehearse.
+Use this pair instead of the emulator pair: upload grants also need the USB-loopback address. The [device handoff](docs/BUILD_IT_DEVICE_DEMO.md) gives installation, launch, reset, acceptance and a planned 2:50 judge script. The existing development APK requires Metro and USB. Installation, real staged camera capture/private upload, incident/route warning/+2 ledger and route refresh passed on the Redmi Note 9 Pro Max reporting Android16/API36. The owner subsequently reported checking phone permissions/reviewing the app; detailed acceptance cases and timed rehearsals are not inferred from that report. New screens still need owner physical acceptance. Do not erase wanted phone drafts to rehearse.
 
 For a first native Android build with the SDK/JDK configured:
 
@@ -66,9 +68,11 @@ pnpm mobile:bundle
 pnpm cedar:check
 # With a separate clean seeded local server:
 pnpm smoke:local
+# Or without touching the existing phone server/drafts:
+pnpm smoke:local --isolated
 ```
 
-Infrastructure tests inspect the actual `cdk.out/JalNetDev.template.json`, so synth precedes tests. The current local gate passed **111 tests across 12 suites**, preserving all 71 baseline tests and adding 40 actual-engine Cedar tests; exact results are in the [implementation report](docs/IMPLEMENTATION_REPORT.md). Earlier [GitHub CI](https://github.com/farhanakhtar0x66/jalnet/actions/runs/37702139384) passed the original milestone checks (44 tests) without AWS credentials or deployment permissions. SDK-mocked tests verify adapter behavior only. No live integration is inferred from a passed test or synthesized template.
+Infrastructure tests inspect the actual `cdk.out/JalNetDev.template.json`, so synth precedes tests. The current local gate passes **165 tests across 15 suites**, preserving all 111 core tests including 40 actual-engine Cedar tests and adding 54 feature tests. Exact results are in the [implementation report](docs/IMPLEMENTATION_REPORT.md). Earlier [GitHub CI](https://github.com/farhanakhtar0x66/jalnet/actions/runs/37702139384) passed the original milestone checks (44 tests) without AWS credentials or deployment permissions. SDK-mocked tests verify adapter behavior only. No live integration is inferred from a passed test or synthesized template.
 
 ## AWS readiness, after SSO
 
@@ -89,7 +93,7 @@ For the cloud mobile build, use the guarded environment helper in the runbook to
 
 ## Scope, safety and acknowledgements
 
-Water Stress, My Water, TankerOS, IoT, video, push, alternative routes, HeatSafe and background route learning remain deferred until P0 is stable. AI cannot establish exact depth, flow, contamination, ownership or guaranteed road safety. Public incident cards exclude contributor IDs/private evidence; private-property reports do not appear publicly. The prototype raw-evidence lifecycle is 14 days, awaiting deployment verification.
+The latest Build It scope includes local My Water arithmetic/simulation, fictional-input Water Stress and noninteractive TankerOS/HeatSafe previews. IoT, real supplier reservations/payments, video, push, alternative routes, heat scoring and background learning remain deferred. AI cannot establish exact depth, flow, contamination, ownership or guaranteed road safety. Public incident cards exclude contributor IDs/private evidence; private-property reports do not appear publicly. The prototype raw-evidence lifecycle is 14 days, awaiting deployment verification.
 
 Target: WeMakeDevs × AWS Environmental Hacks, Heat and Water track, October 8–11, 2026. Verify exact submission hours from the [official schedule](https://www.wemakedevs.org/aws/env/schedule) and [rules](https://www.wemakedevs.org/aws/env/rules).
 

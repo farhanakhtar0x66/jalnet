@@ -46,6 +46,12 @@ export function MyWater() {
   }, [state.data, form]);
   const parsed = form ? parseTankForm(form) : null;
   const estimate = parsed?.valid ? calculateTank(parsed.inputs) : null;
+  const forecastOrigin =
+    state.data?.levelSource === "USER_ENTERED" &&
+    state.data.capacitySource === "USER_ENTERED" &&
+    state.data.dailyUseSource === "USER_ENTERED"
+      ? "USER-ENTERED"
+      : "SIMULATED";
   const edit = (field: TankField, text: string) => {
     if (!form || !state.data) return;
     const next = { ...form, [field]: text };
@@ -123,7 +129,7 @@ export function MyWater() {
                     : `~${estimate.hoursRemaining.toLocaleString(undefined, { maximumFractionDigits: 1 })} hours until depletion`}
               </Text>
               <Text>
-                ESTIMATE from{" "}
+                {forecastOrigin} depletion estimate from{" "}
                 {state.data.dailyUseSource === "DEMO_FIXTURE"
                   ? "demo"
                   : "USER-ENTERED"}{" "}

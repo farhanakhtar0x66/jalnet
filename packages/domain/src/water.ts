@@ -48,12 +48,16 @@ export function simulateTankDay(input: TankState): TankState {
     levelPct: state.levelPct,
     dailyUseLitres: state.dailyUseLitres,
   });
+  const nextLevel =
+    (Math.max(0, remainingLitres - state.dailyUseLitres) /
+      state.capacityLitres) *
+    100;
   return tankStateSchema.parse({
     ...state,
-    levelPct:
-      (Math.max(0, remainingLitres - state.dailyUseLitres) /
-        state.capacityLitres) *
-      100,
+    // Approximate simulation: six decimal percentage places avoid floating-point
+    // tails becoming an invalid/overlong editable input. At the 1M L limit this
+    // quantizes volume by at most 0.01 L; this is not sensor precision.
+    levelPct: Math.round(nextLevel * 1_000_000) / 1_000_000,
     levelSource: "SIMULATED",
     simulatedDays: state.simulatedDays + 1,
   });
@@ -61,10 +65,26 @@ export function simulateTankDay(input: TankState): TankState {
 
 export type TankForm = Record<TankField, string>;
 export function tankForm(state: TankInputs): TankForm {
+  const decimal = (value: number) => {
+    // Editable values need plain decimals. High-precision Intl formatting on
+    // Android can add binary floating-point tails even to whole percentages.
+    const text = String(value);
+    if (!text.includes("e")) return text;
+    const exponentStart = text.indexOf("e");
+    const coefficient = text.slice(0, exponentStart);
+    const exponent = text.slice(exponentStart + 1);
+    const [whole = "", fraction = ""] = coefficient.split(".");
+    const digits = whole + fraction;
+    const point = whole.length + Number(exponent);
+    if (point <= 0) return `0.${"0".repeat(-point)}${digits}`;
+    if (point >= digits.length)
+      return digits + "0".repeat(point - digits.length);
+    return `${digits.slice(0, point)}.${digits.slice(point)}`;
+  };
   return {
-    capacityLitres: String(state.capacityLitres),
-    levelPct: String(state.levelPct),
-    dailyUseLitres: String(state.dailyUseLitres),
+    capacityLitres: decimal(state.capacityLitres),
+    levelPct: decimal(state.levelPct),
+    dailyUseLitres: decimal(state.dailyUseLitres),
   };
 }
 

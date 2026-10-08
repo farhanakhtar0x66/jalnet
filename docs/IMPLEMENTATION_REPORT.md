@@ -226,3 +226,54 @@ Exact changed files in this focused increment:
 
 - Runtime/development: `package.json`, `scripts/dev-server.ts`, `scripts/smoke-local.ts`, `apps/mobile/src/Home.tsx`.
 - Documentation: `README.md`, `docs/BUILD_IT_DEVICE_DEMO.md`, `docs/DEMO_READINESS.md`, `docs/AWS_DEPLOYMENT_RUNBOOK.md`, `docs/PRIVACY.md`, `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/IMPLEMENTATION_STATUS.md`, `docs/IMPLEMENTATION_REPORT.md`.
+
+
+## Build It feature completion and Aryan handoff — 2026-10-08
+
+The owner's new strategy explicitly authorizes these narrow additions after the accepted core milestone, while freezing Cedar at **9422fc2**. A read-only source/spec/status/device-demo audit and the prioritized [feature matrix](FEATURE_STATUS.md) preceded application edits. The [UI handoff](ARYAN_UI_HANDOFF.md) established additive contracts before implementation. Engineering branch: `codex/build-it-features`; first reviewed increment **cffdd2a**. No history/timestamp rewrite, new framework, database, dependency, authentication system or AWS credential/deployment work occurred.
+
+My Water is executable: validated capacity/percentage/daily-use inputs calculate volume and approximate depletion, update immediately on valid edits, simulate one hypothetical day, and persist versioned account-scoped state in a new table inside the existing `jalnet-cache.db`. Inputs/forecasts show USER-ENTERED, DEMO FIXTURE or SIMULATED provenance. Zero consumption, empty tank, partial/invalid input, failed/corrupt storage, ordered saves, retry and explicit tank-only reset are handled. It has no meter, real-time refill/consumption feed or guaranteed forecast. Reset gives 1,500 L / 60% / 300 L per day → 900 L / 72 hours; one simulated day → 600 L / 48 hours.
+
+Water Stress is an executable **DEMO INDICATOR** for a fictional Delhi area. Six editable pressures use plan §21.2 weights .25/.15/.15/.20/.15/.10. It exposes each contribution, renormalizes available weights and suppresses a headline below 60% weighted coverage. The sample produces 59.5 points rounded to 60/HIGH; omitting supply and groundwater gives 55% coverage and no headline. Weights/bands are prototype choices, not calibrated official standards or scientific confidence. Edits are ephemeral; no external feed, personal-tank coupling, heatmap, safety or incident/reward change exists. TankerOS is a static DEMO supplier/price/volume preview, **not working reservation/discovery against enrolled suppliers**; it has no booking/payment/contact action. HeatSafe and future intelligence are PLANNED cards only. Aryan owns the final visual redesign.
+
+### Actual checks and counts
+
+| Executed command | Actual result / scope |
+|---|---|
+| `pnpm format:check`, `pnpm lint` | PASS, 84 source/config files after final code formatting. |
+| `pnpm typecheck` | PASS, root and mobile. The final plain-decimal formatter initially failed strict unchecked-index typing; corrected before this pass. |
+| `pnpm synth` | PASS, six existing Lambda assets/template; no deployment or AWS calls. |
+| `pnpm test` | **PASS: 15 suites / 165 tests.** All 111 existing tests retained, including 40 unchanged real Cedar tests; **54 added** (27 tank/input/simulation, 11 persistence/recovery, 16 Stress/demo-contract). One sandboxed rerun denied localhost listeners; its 17 HTTP failures were environmental, and the complete rerun with localhost access passed. |
+| `pnpm mobile:bundle` | PASS, Android Hermes export, 927 modules / 2.8 MB. No new native APK build or standalone/offline acceptance claim. |
+| `pnpm smoke:local --isolated` | PASS, actual real-Cedar HTTP JPEG upload → manual confirmation → fusion → route warning → Alice 10/Bob 7 ledger → replay, on a bounded temporary server/state. Active phone `.local-data`/API/drafts were not reset. Not native-camera or AWS proof. |
+| `pnpm cedar:check` | PASS, frozen Cedar 4.13.0 / Node 24.21.0, 1,000 actual decisions (500 allow / 500 deny). This run: 37.330 ms initialization, 0.309 ms median / 1.035 ms p95; local process measurements, no Lambda extrapolation. |
+| Frozen-source and authored-diff review | No changes since 9422fc2 to services, policies, infrastructure, Cedar test files, dependency lock, cutover/smoke/configure-mobile guards or original shared API contracts. Home changes are an additive entry/sheet and truthful local banner; cache change only exports its existing database promise. Original source plan/history retained. |
+
+The first My Water increment separately passed its complete gate at 148 tests / 14 suites; the Stress increment increased it to 164, and a native numeric-input regression test brought the final count to **165**. No Cedar test was modified or replaced. The isolated smoke mode preserves the original default clean-seed smoke and creates/cleans only its own temporary loopback fixture.
+
+### Native emulator evidence and limits
+
+The existing Pixel7/API37.1 preview emulator and installed development client ran on an isolated temporary API8837/Metro8082, separate from the owner's USB API8787/Metro8081. Actual input 75% gave 1,125 L / 90 hours; simulation gave 825 L / 55% / 66 hours / day 1; idle force-stop/reopen restored these values from native SQLite. The tank-only reset confirmation restored 900 L / 60% / 72 hours / day 0 and saved it. Stress actually rendered 60/HIGH/100% and 55%-coverage/no-headline after two factors were cleared. Vision displayed the required DEMO/PLANNED copy. These are emulator results, **not Redmi physical acceptance**.
+
+Native inspection found overlong binary percentage tails in editable simulated inputs. Derived simulation percentages now round to six decimals (at the allowed maximum capacity this quantizes volume by at most 0.01 L), and plain-decimal formatting avoids high-precision Android locale artifacts/scientific notation. Final actual UI retest after reset/edit produced clean 55% and 35% inputs, with 825 L / 66 hours and 525 L / 42 hours. Regression coverage includes tiny valid decimals and repeated simulation. New feature database initialization is lazy/awaited so failures reach the screen recovery path, rather than an eager feature promise rejection.
+
+A camera reopen on the separate emulator found a retained private draft referencing its older API, producing Report not found on the isolated screenshot server. The draft was **preserved**, and the panel was closed. No fresh native-camera pass is claimed for this increment. The earlier accepted Redmi capture remains historical evidence; current original-flow HTTP tests/smoke pass. New-feature Redmi review and a fresh full physical rehearsal are owner tasks.
+
+Seven visually inspected synthetic screenshots are in [docs/ui](ui/README.md): home, tank fixture, entered level, final simulated level, Stress full/limited inputs and vision. No private phone scene, real coordinates/account/customer/supplier data or authentication secret was committed. Longer forms/actions require scrolling; keyboard/system-inset/large-font/TalkBack and final visual review remain for Aryan/owner.
+
+### Acceptance boundaries and handoff
+
+The [device demo](BUILD_IT_DEVICE_DEMO.md), [five rehearsals](FIVE_REHEARSALS.md) and [submission assets](BUILD_IT_SUBMISSION_ASSETS.md) now include exact tank/Stress fixture restoration, honest feature disclosures and a planned **2:50** shot list. Five timed physical runs, final video and submission have **not** occurred; recording/submission still require owner approval. The owner reported reviewing phone permissions, which is recorded as owner report rather than invented detailed case results.
+
+Official [Build It overview](https://www.wemakedevs.org/aws/env) supports local AWS open-source use and explicitly lists Cedar without an AWS account. SSO is outside the primary-submission critical path. Overall eligibility, kickoff/original-work timing, registration/student/participation and submission requirements remain separate team/organizer review. Preserve genuine Git history and attribution.
+
+Existing AWS architecture stays intact and **BLOCKED_AWAITING_SSO** (`jalnet`, `ap-south-1`), with unknown approved account/role/resources/model/key and native Maps enforcement. Optional Cedar Lambda packaging/runtime is still unverified. No live AWS integration or original cloud P0 completion is claimed.
+
+Delivered source/test files across the two feature increments:
+
+- `packages/contracts/package.json`, `packages/contracts/src/water.ts`; `packages/domain/src/water.ts`, `packages/domain/src/water-stress.ts`.
+- `apps/mobile/src/Home.tsx`, `apps/mobile/src/cache.ts`; `apps/mobile/src/features/{MyWater,WaterStress,VisionPreview,WaterHub}.tsx`, `{persistence,storage,useLocalFeature,demo-data}.ts`.
+- `scripts/smoke-local.ts`; `tests/water.test.ts`, `tests/water-persistence.test.ts`, `tests/water-stress.test.ts`.
+- `README.md`, `TODO.md`; feature/status/report/decision/blocker/privacy docs, Aryan handoff, device/submission/physical/rehearsal docs and seven public synthetic UI references.
+
+After the reviewed engineering commit, Aryan may change presentation in `Home.tsx`, `ReportFlow.tsx`, `Button.tsx`, `App.tsx` and `features/{MyWater,WaterStress,VisionPreview,WaterHub}.tsx`, preserving state/action/contract semantics and coordinating Home navigation. Storage/models/contracts/auth/API/Cedar/AWS/tests are engineering boundaries. Exact component/state inventory and visual acceptance criteria are in the handoff.

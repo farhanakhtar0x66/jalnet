@@ -2,7 +2,7 @@
 
 Prepared 2026-10-08. Cedar authorization is frozen at **9422fc2**; no authorization, policy or AWS architecture change is part of this increment. The target phone installed/launched and completed a real-camera LOCAL/DEMO report → warning → +2 flow. **Remaining physical acceptance and final recording are pending.** Live AWS remains **BLOCKED_AWAITING_SSO**. This local demonstration does not declare hackathon eligibility or P0 completion.
 
-The owner accepted the physical milestone at **087a225** and froze local features. Continue remaining tests one at a time using the [actual acceptance log](PHYSICAL_ACCEPTANCE.md), [five-rehearsal checklist](FIVE_REHEARSALS.md) and [final recording/submission assets](BUILD_IT_SUBMISSION_ASSETS.md). Their unexecuted items remain pending; these documents introduce no application/authorization/architecture change.
+The owner accepted the physical milestone at **087a225** and initially froze local features. The later Build It strategy authorizes the narrow My Water/Water Stress/vision increment and assigns visual design to Aryan, testing/product/recording/submission to the owner. Cedar remains frozen9422fc2. See the [feature matrix](FEATURE_STATUS.md), [UI handoff](ARYAN_UI_HANDOFF.md), [actual acceptance log](PHYSICAL_ACCEPTANCE.md), [five-rehearsal checklist](FIVE_REHEARSALS.md) and [submission assets](BUILD_IT_SUBMISSION_ASSETS.md). Owner-reported permission review does not invent detailed device-case results. AWS SSO is only a future cloud gate, not the primary-submission dependency.
 
 ## Read-only audit and compatibility boundary
 
@@ -53,7 +53,7 @@ Then open the installed development client:
 "$JALNET_ADB" -d shell am start -a android.intent.action.VIEW -d 'jalnet://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8081' org.jalnet.mobile
 ```
 
-Confirm the actual screen says **LOCAL / DEMO · AWS blocked awaiting SSO** before any capture. These presets explicitly override provider mode/API in the launching shell, leaving an existing ignored AWS `.env` intact. They never silently switch a running cloud app. If the API or Metro port is already occupied, inspect the process and stop only the known JalNet process you started. Never start two competing local transports or kill an unrelated listener.
+Confirm the actual screen says **LOCAL / DEMO · No live AWS services** before any capture. These presets explicitly override provider mode/API in the launching shell, leaving an existing ignored AWS `.env` intact. They never silently switch a running cloud app. If the API or Metro port is already occupied, inspect the process and stop only the known JalNet process you started. Never start two competing local transports or kill an unrelated listener.
 
 For emulator-only rehearsal, use `pnpm local:server` and `pnpm mobile:start:local`; do not mix that upload host with the USB phone preset. No LAN binding or tunnel is needed.
 
@@ -67,7 +67,9 @@ For emulator-only rehearsal, use `pnpm local:server` and `pnpm mobile:start:loca
 6. Capture → upload privately → read the manual/uncertain assessment → choose Waterlogging and qualitative severity 2 → explicitly confirm still-active/public-road demo inputs → submit. These inputs exercise a local simulated public-road observation; they are never sent to AWS. Expect one UNVERIFIED citizen incident, **+2 provisional droplets**, a warning on the seeded corridor and a matching ledger entry. Do not promise a safe alternative route. If a route check has aged, use **Refresh route reports** inside Routes (or Retry connection on the map); wait for a fresh check before showing the warning.
 7. Show route risk and profile. Successful confirmation automatically clears its local draft/image; if an interrupted completion left an already accepted local copy, use Finish / clear submitted draft. Repeat steps 1–6 for each clean timed take. Record actual durations and failures privately. Five successful **physical UI** rehearsals are still pending; repeated HTTP fixtures do not satisfy this gate.
 
-`pnpm smoke:local` is a separate bounded fixture rehearsal and requires the clean seed before it runs. It produces two distinct synthetic JPEG reports, one fused event and Alice 10/Bob 7 droplets through actual local HTTP. Bob is a test-client identity; this is not a second independent citizen. Reset/reseed again before the one-camera interactive story. Do not combine a smoke's seeded outcome with a claim that the displayed phone capture created it.
+Before each expanded take, open **My Water → Reset My Water demo fixture → Reset tank only**. Expect capacity 1,500 L, SIMULATED level 60%, DEMO FIXTURE consumption 300 L/day, 900 L remaining, approximately 72 hours, day 0 and Saved on this device. This resets only the current account's tank row; reports/drafts/route/cache/ledger stay intact. One simulated day must give 600 L / 40% / 48 hours / day 1. Reopen to check persistence, then reset the tank again. For Stress, tap **Restore Water Stress DEMO inputs** (or close/reopen the sheet): expect DEMO INDICATOR 60/HIGH, 100% coverage. Clearing supply and groundwater must show 55% coverage and no headline score; reset afterward. These new-screen steps are owner physical acceptance tasks; the emulator result is not a Redmi pass.
+
+`pnpm smoke:local --isolated` can verify the fixture workflow without touching the active phone API, `.local-data` or private drafts; it creates and cleans its own temporary state/server. `pnpm smoke:local` is a separate bounded fixture rehearsal and requires the clean seed before it runs. It produces two distinct synthetic JPEG reports, one fused event and Alice 10/Bob 7 droplets through actual local HTTP. Bob is a test-client identity; this is not a second independent citizen. Reset/reseed again before the one-camera interactive story. Do not combine a smoke's seeded outcome with a claim that the displayed phone capture created it.
 
 ## Cedar proof without changing the frozen implementation
 
@@ -82,19 +84,21 @@ The two suites contain 40 real-engine tests, including actual HTTP owner allow, 
 
 Production policy permits those four actions only when `resource.owner == principal`. The principal comes from the trusted localhost authentication boundary and ownership from persisted repository data; the existing ownership comparison remains. Cedar authorizes; fixed localhost demo identity authenticates. The camera workflow uses this same mandatory composition. No claim that Cedar is deployed in Lambda is permitted.
 
-## 2 minute 45 second script and shot list
+## 2 minute 50 second script and shot list
 
-These are planned timings, not a measured physical rehearsal. Leave 15 seconds below the strict three-minute limit. Use transparent cuts for loading/time-consuming taps; do not replace a current result with another take without disclosure.
+These are planned timings, not a measured physical rehearsal. Leave 10 seconds below the strict three-minute limit. Use transparent cuts for loading/time-consuming taps; do not replace a current result with another take without disclosure. Final recording still requires owner approval. Preserve the core story; omit vision/stress shots before rushing the camera or Cedar proof if actual timings exceed the budget.
 
 | Time | Shot | Suggested narration |
 |---|---|---|
-| 0:00–0:15 | Physical phone, LOCAL/DEMO banner and attributed local basemap | “JalNet turns a water observation into a saved-route warning. This is a local prototype. AWS cloud access is blocked; the street map uses OpenFreeMap and OpenStreetMap data.” |
-| 0:15–0:45 | Choose staged demo pin; real camera capture and private draft | “I am photographing a staged scene with the phone camera. The Delhi pin is synthetic. The image is resized and kept private until I choose what to publish.” |
-| 0:45–1:10 | Private upload; explicit manual/uncertain review; consent and submit | “Local analysis runs no image model. I classify the staged observation and confirm the demo inputs. Publication requires human confirmation; the photo stays out of the public card.” |
-| 1:10–1:40 | UNVERIFIED incident card, seeded saved-corridor warning, profile +2/ledger | “This single report stays unverified. The local straight-line corridor intersects it, so JalNet warns about uncertainty. The accepted demo contribution earns two provisional droplets, not a safety guarantee.” |
-| 1:40–2:15 | Frozen permit policy; actual-engine HTTP test output (prepared earlier, timestamp/commit visible) | “AWS-origin open-source Cedar makes a mandatory authorization decision. These real HTTP tests allow the owner, deny another identity and show an explicit forbid denying an otherwise allowed owner, with no upload grant, mutation, incident or reward.” |
-| 2:15–2:35 | Existing AWS architecture frame from DEMO_READINESS.md, caption IMPLEMENTED_UNVERIFIED / BLOCKED_AWAITING_SSO | “The preserved cloud path uses Cognito, API Gateway, Lambda, DynamoDB, private S3, SQS, Nova and Amazon Location. None of those live integrations is claimed verified here.” |
-| 2:35–2:45 | Purpose/privacy frame; repo and credits | “Our local demo uses manual assessment and simulated route data. Cedar runs for real. Codex assisted development; licenses and source are public. Device and cloud acceptance are separate gates.” |
+| 0:00–0:10 | Phone, LOCAL/DEMO banner and attributed street map | “JalNet connects water observations, route warnings and household planning. This Build It prototype runs locally with real Cedar authorization.” |
+| 0:10–0:50 | Synthetic pin; staged real camera capture, private upload, manual review/consent and submit | “This scene is staged and the pin synthetic. Evidence stays private; no local image model runs. I classify and explicitly confirm this demo report.” |
+| 0:50–1:10 | UNVERIFIED incident, fresh seeded-corridor warning, profile+2/ledger | “One report remains unverified. The actual intersection check warns on this demo line, not a calculated road route. This is a provisional+2 contribution, not a safety guarantee.” |
+| 1:10–1:40 | My Water reset fixture, inputs/source labels, one simulated day | “These inputs are entered or simulated, with no meter. The calculator gives900L and72h; simulate one day and it gives600L and48h. It assumes constant300L daily use and no refill; changes persist locally.” |
+| 1:40–2:00 | Water Stress DEMO60/HIGH, contributing weights, limited-data example | “This indicative area score is computed from fictional pressures. The factors and weights are inspectable; missing data is renormalized and low coverage suppresses the score. It is not an official measurement.” |
+| 2:00–2:10 | TankerOS DEMO cards and HeatSafe PLANNED card | “Supplier names/prices are sample previews. No tanker, payment or contact occurs. HeatSafe is a future concept.” |
+| 2:10–2:35 | Frozen permit and sanitized actual-engine HTTP owner/foreign/forbid results | “AWS-origin Cedar is mandatory before private-report access. Real HTTP tests allow the owner, deny another identity and use a test-only forbid to deny the owner, with zero effects.” |
+| 2:35–2:45 | Local architecture then preserved future AWS frame | “Cedar runs in our local Node API. The future Cognito/S3/Nova/Location path is preserved and unverified; it is not needed for this local Build It demonstration.” |
+| 2:45–2:50 | Repo, map/license/Codex credits and uncertainty | “Working logic, simulations and planned features are labeled separately. Source, licenses and Codex assistance are disclosed.” |
 
 The current [official rules](https://www.wemakedevs.org/aws/env/rules) require a public repository, an under-three-minute public/unlisted YouTube demo, a short write-up, visible AWS integration and AI-tool disclosure. Eligibility, registration/check-in, student verification and original-work timing still need team review. The [schedule](https://www.wemakedevs.org/aws/env/schedule) currently lists October 8–11 but leaves exact opening/submission hours to announcement; confirm these with organizers. Preserve actual Git history. No eligibility claim or final recording/upload has been made.
 
@@ -110,6 +114,9 @@ Suggested submission write-up: “JalNet helps citizens document water-related o
 | Assessment | Deterministic uncertainty/manual classification; no Nova invocation. |
 | Location / map / route | Staged scene and synthetic pin for this take, public OpenFreeMap/OpenMapTiles/OpenStreetMap assets, seeded straight-line corridor; no Amazon map/road-route claim. Real GPS is a separate device test. |
 | Incident / warning / droplets | Actual existing domain logic over disclosed demo input; single report unverified/+2 provisional; fixture fusion 10/7 is a separate HTTP proof. |
+| My Water | Actual input arithmetic, one-day simulation and local persistence; per-field USER-ENTERED/DEMO FIXTURE/SIMULATED source. No IoT/live meter, refill feed or guaranteed forecast. |
+| Water Stress | Actual weighted calculation over fictional editable sample pressures; DEMO INDICATOR, missing-weight coverage and limits. No official/live measurement or private-tank/route coupling. |
+| TankerOS / HeatSafe | Fictional noninteractive supplier/price/volume preview; reservation not implemented, no booking/payment/contact. HeatSafe and predictive ideas PLANNED. |
 | AWS frame | Future cloud architecture only, IMPLEMENTED_UNVERIFIED / BLOCKED_AWAITING_SSO. Local Cedar proof cannot promote these statuses. |
 
 ## Failure fallback and exact owner participation

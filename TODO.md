@@ -124,6 +124,8 @@ This checklist tracks work order. The [implementation status matrix](docs/IMPLEM
 
 ## Only after P0 acceptance
 
+The later Build It strategy authorizes a narrow exception on `codex/build-it-features`: local My Water arithmetic/simulation/persistence, sample Water Stress calculation and static TankerOS/HeatSafe previews. Cedar/core/cloud remain preserved. See the current FEATURE_STATUS.md and ARYAN_UI_HANDOFF.md; this does not complete the broader stretch items below.
+
 - [ ] Evaluate Water Stress with provenance, coverage and missing-weight normalization tests.
 - [ ] Evaluate clearly labeled simulated My Water with forecast/baseline/anomaly tests.
 - [ ] Evaluate labeled demo tanker quotes/reservations without payments.

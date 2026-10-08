@@ -112,6 +112,26 @@ describe("executable local My Water arithmetic", () => {
     value.levelPct = 2;
     expect(tankDemoFixture().levelPct).toBe(60);
   });
+  it("keeps simulated and tiny valid saved values usable in decimal input fields", () => {
+    const state = simulateTankDay({ ...tankDemoFixture(), levelPct: 75 });
+    expect(state.levelPct).toBe(55);
+    expect(tankForm(state).levelPct).toBe("55");
+    expect(
+      parseTankForm(tankForm({ ...state, levelPct: 0.0000001 })).valid,
+    ).toBe(true);
+    expect(tankForm({ ...state, levelPct: 1e-18 }).levelPct).toBe(
+      "0.000000000000000001",
+    );
+    expect(parseTankForm(tankForm({ ...state, levelPct: 1e-18 })).valid).toBe(
+      true,
+    );
+    let repeated = { ...tankDemoFixture(), dailyUseLitres: 12.34 };
+    for (let day = 0; day < 80; day++) {
+      repeated = simulateTankDay(repeated);
+      expect(parseTankForm(tankForm(repeated)).valid).toBe(true);
+    }
+    expect(repeated.levelPct).toBe(0);
+  });
   it.each([
     { capacityLitres: 0 },
     { capacityLitres: 1_000_001 },

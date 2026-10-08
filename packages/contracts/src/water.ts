@@ -22,3 +22,23 @@ export const tankStateSchema = tankInputsSchema.extend({
   simulatedDays: z.number().int().min(0).max(36_500),
 });
 export type TankState = z.infer<typeof tankStateSchema>;
+
+const pressure = z.number().finite().min(0).max(1).nullable();
+export const stressInputsSchema = z.strictObject({
+  supply: pressure,
+  heatDemand: pressure,
+  rainfall: pressure,
+  groundwater: pressure,
+  tankerDemand: pressure,
+  leakLoss: pressure,
+});
+export type StressInputs = z.infer<typeof stressInputsSchema>;
+export type StressFactorId = keyof StressInputs;
+export const demoSupplierSchema = z.strictObject({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  source: z.literal("DEMO"),
+  capacityLitres: z.number().int().positive(),
+  samplePriceINR: z.number().finite().nonnegative(),
+});
+export type DemoSupplier = z.infer<typeof demoSupplierSchema>;
