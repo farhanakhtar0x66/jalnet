@@ -1,6 +1,6 @@
 # Redmi final acceptance record
 
-Started 2026-10-08, Asia/Kolkata. The owner accepted the physical-phone milestone and froze local features at **087a225** and Cedar authorization at **9422fc2**. This pass is limited to physical acceptance, demonstration/submission preparation and minimal fixes for observed defects. Live AWS remains **BLOCKED_AWAITING_SSO**; no local result verifies a cloud boundary or completes P0.
+Started 2026-10-08, Asia/Kolkata; updated 2026-10-09. The owner accepted the physical-phone milestone at **087a225** and froze Cedar authorization at **9422fc2**. The subsequent Build It strategy authorized the narrow feature increment through **2dbbc4f**. This pass covers physical acceptance of those delivered features and the existing core, demonstration/submission preparation and minimal fixes for observed defects. Live AWS remains **BLOCKED_AWAITING_SSO**; no local result verifies a cloud boundary or completes P0.
 
 ## Evidence rules and preservation
 
@@ -10,7 +10,7 @@ Each result needs test ID, tested commit/worktree changes, Asia/Kolkata date/tim
 
 Keep API8787, Metro8081 and adb reverse intact. Do not reset `.local-data`, clear app storage, uninstall, discard wanted drafts or change AWS configuration for these tests. Check for an existing draft before camera tests. If a wanted draft occupies the capture flow, preserve it and defer tests requiring a fresh capture until the owner has finished it. Permission changes must happen when capture/upload is idle. Before controlled API-offline tests, identify the known JalNet server, preserve its state and restore that same USB-local composition afterward; keep Metro/USB/internet running.
 
-The previous [physical milestone](BUILD_IT_DEVICE_DEMO.md#physical-acceptance-record) remains historical evidence: one real staged JPEG/private local upload/confirmation/unverified incident/warning/+2 ledger and route refresh. It is not a repeat of the remaining tests below. The 111-test suite last passed on the accepted revision; preserve that baseline.
+The previous [physical milestone](BUILD_IT_DEVICE_DEMO.md#physical-acceptance-record) remains historical evidence: one real staged JPEG/private local upload/confirmation/unverified incident/warning/+2 ledger and route refresh. It is not a repeat of the remaining tests below. The feature increment passed 165 tests across 15 suites, preserving all 111 core tests including 40 Cedar tests; that automated result is separate from physical acceptance.
 
 ## Current preflight evidence
 
@@ -68,3 +68,35 @@ Next required owner interaction: **C-01 setup only**. While capture/upload is id
 ### 2026-10-08: owner strategy update
 
 The owner subsequently reported checking physical-phone permissions and reviewing the application, accepted the demonstrated Android core and redirected work to Build It feature engineering/UI handoff. This is owner-reported review, without per-case observations for the pending rows above. It does not invent a denial/GPS/offline/accessibility/attribution result. The C-01 interaction queue is suspended under the new instruction; the owner now owns further testing/recording. Agent work must preserve the current USB-local state and drafts. New feature tests are separate from the historical camera-to-warning milestone and require their own phone acceptance.
+
+### 2026-10-09: MW-01 owner-confirmed tank fixture
+
+The preceding instruction asked the owner to open My Water, choose Reset My Water demo fixture → Reset tank only, and confirm **900 L remaining, 60% SIMULATED level and approximately 72 hours**. The owner replied “confirmed now continue”. **MW-01 PASS, explicit owner report** for those requested values and reset interaction. No screenshot or independent agent phone observation was supplied; exact device-test time and loaded phone bundle hash were not reported. Repository revision at logging is **2dbbc4f**, on `codex/build-it-features`, with documentation-only changes afterward. This result does not prove restart persistence, simulation, invalid inputs, other phone cases or cloud behavior.
+
+No phone/API/Metro operation, storage reset, draft discard or code change was performed while recording this result. No timed rehearsal is counted.
+
+### 2026-10-09: MW-02 owner-confirmed one-day arithmetic
+
+After the instruction to tap Simulate one day of consumption once, the owner reported “yeah 600l 40% and 48 hours left”. The numerical outcome is **PASS, explicit owner report**: 600 L remaining, 40% level and approximately 48 hours. The SIMULATED label and day count were not reported and remain unconfirmed; neither is inferred from the arithmetic. No screenshot/independent phone observation or exact test time was supplied. Repository revision remains **2dbbc4f**, with documentation-only worktree changes. Persistence after reopening has not yet been tested. No phone/server/storage operation or code change was performed by the agent for this record.
+
+## New-feature physical acceptance queue
+
+Give only the next interaction, then wait for its actual result. Expectations are not passes.
+
+| ID | Test | Expected acceptance behavior | Actual result |
+|---|---|---|---|
+| MW-01 | Tank-only fixture reset | 900 L remaining, 60% SIMULATED level, approximately 72 hours | PASS, owner report on 2026-10-09; see log above |
+| MW-02 | One simulated day from the reset fixture | 600 L remaining, 40% SIMULATED level, approximately 48 hours, simulated day 1 | Numerical outcome PASS, owner report on 2026-10-09; label/day count not yet reported |
+| MW-03 | Close/reopen after the save indicator finishes | Same 600 L / 40% / 48 hours / day 1 restored, without another simulation | PENDING |
+| MW-04 | Valid input edits and invalid/zero/empty cases | Immediate correct arithmetic; invalid edits suppress forecast and do not replace saved valid values; zero-use/empty copy is accurate | PENDING |
+| WS-01 | Stress full and missing-input samples | DEMO INDICATOR 60/HIGH/100%; missing supply+groundwater gives 55% coverage and no headline | PENDING |
+| V-01 | Vision disclosure and usable navigation | TankerOS fictional DEMO/no booking action; HeatSafe PLANNED; return to map works | PENDING |
+
+Next owner action: **MW-03 only**. Wait for Saved on this device, choose Close / return to map, then reopen My Water. Report whether 600 L / 40% / approximately 48 hours remain, and the actual level-source label and simulated-day count. Do not simulate or reset again during this check. This tests panel reopening, not a process/device restart.
+
+
+### 2026-10-09: phone unavailable; redesign acceptance is separate
+
+The owner reported that the phone battery died and explicitly assigned the complete UI/theme redesign before resuming device tests. The MW-03 interaction queue is suspended. No phone launch, installation, reset, draft discard or storage clear was performed during the redesign. The prior MW-01/MW-02 owner results describe the previous bundle at 2dbbc4f; they do not prove the redesigned screens.
+
+When the owner has charged the phone, resume one case at a time after installing the reviewed replacement development APK **in place** (`adb -d install -r`, never uninstall/clear), retaining private drafts and the USB8787/8081 setup. Recheck camera, location, offline/cache, accessibility, attribution and the new System/Light/Dark setting. New native SVG/safe-area/theme modules require the rebuilt APK; the earlier APK is not sufficient. Emulator-only evidence is recorded in [UI_REDESIGN_REPORT.md](UI_REDESIGN_REPORT.md). Five physical rehearsals and final recording remain pending.

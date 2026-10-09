@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "org.jalnet.mobile"
@@ -40,8 +40,28 @@
           "locationWhenInUsePermission": "Locate your report or recenter the map. You can choose a pin instead."
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "./plugins/withDevMenuPresentation.cjs",
+      "expo-system-ui",
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F5F8FA",
+          "dark": {
+            "backgroundColor": "#101922"
+          },
+          "image": "./assets/icon.png",
+          "imageWidth": 80
+        }
+      ]
     ],
-    "scheme": "jalnet"
+    "scheme": "jalnet",
+    "backgroundColor": "#F5F8FA"
   }
 }

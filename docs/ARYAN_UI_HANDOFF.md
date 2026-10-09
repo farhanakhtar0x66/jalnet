@@ -1,6 +1,6 @@
 # Aryan: mobile UI handoff
 
-Prepared 2026-10-08 for the Build It strategy. You own visual implementation. Engineering owns calculation, validated local state and reliability on `codex/build-it-features`; the owner owns product decisions, physical tests and final recording/submission. Begin from the reviewed engineering commit once delivered; do not edit the same files concurrently. No teammate message has been sent by this document.
+Prepared 2026-10-08 for the Build It strategy. **Updated 2026-10-09:** the owner reassigned the complete UI/theme work to Codex while Aryan is unavailable. The dedicated `ui/jalnet-redesign` branch starts from verified feature commit `2dbbc4f`; see [the redesign evidence](UI_REDESIGN_REPORT.md). The inventory and boundaries below remain the original handoff context. Aryan may review the delivered branch; no merge is authorized. Engineering owns calculation, validated local state and reliability on `codex/build-it-features`; the owner owns product decisions, physical tests and final recording/submission. Begin from the reviewed engineering commit once delivered; do not edit the same files concurrently. No teammate message has been sent by this document.
 
 ## Current screen inventory and exact source
 
