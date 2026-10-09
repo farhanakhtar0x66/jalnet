@@ -1,10 +1,10 @@
 # Build It feature audit and execution plan
 
-Audit: 2026-10-08, Asia/Kolkata, starting at 087a225 with existing acceptance-document drafts retained. The owner's new strategy authorizes the narrow secondary features below, superseding the earlier feature freeze only for this scope. Cedar stays frozen at 9422fc2. Engineering branch: `codex/build-it-features`. Aryan owns visual implementation; the owner owns testing/product choices/recording/submission.
+Initial audit: 2026-10-08, Asia/Kolkata, starting at 087a225 with existing acceptance-document drafts retained. The owner's Build It strategy authorized the narrow secondary features below, superseding the earlier feature freeze for that scope. Cedar stays frozen at 9422fc2. The historical engineering branch was `codex/build-it-features`, with visuals initially assigned to Aryan. On 2026-10-09 the owner reassigned the complete UI/theme redesign to Codex on `ui/jalnet-redesign`, starting from `2dbbc4f`; testing/product choices/recording/submission remain with the owner. The phone battery died before the requested MW-03 close/reopen check, so new-screen physical acceptance remains pending.
 
 The [official overview](https://www.wemakedevs.org/aws/env) was reread on 2026-10-08: it supports local AWS open-source use, explicitly lists Cedar, and needs no AWS account for Build It. The [rules](https://www.wemakedevs.org/aws/env/rules) still impose opening-time/original-work, team, participation and submission requirements. This supports the chosen technical path, not a claim of overall eligibility. Preserve all Git dates/history; organizer clarification remains pending. AWS SSO is not a primary-submission dependency; cloud acceptance stays BLOCKED_AWAITING_SSO.
 
-## Prioritized execution
+## Historical feature-increment execution plan
 
 1. Publish a practical [UI handoff](ARYAN_UI_HANDOFF.md) and stable additive local data interfaces before feature implementation. Do not redesign the core screens or change existing HTTP contracts.
 2. My Water: validated capacity/level/daily-consumption inputs, executable remaining-volume/depletion arithmetic, explicit one-day simulation, account-scoped persistence in the existing SQLite database and explicit fixture reset. Add calculation and persistence/recovery tests; run the full local gate.
@@ -12,13 +12,15 @@ The [official overview](https://www.wemakedevs.org/aws/env) was reread on 2026-1
 4. TankerOS sample discovery as a noninteractive DEMO preview; HeatSafe as a PLANNED roadmap card. No booking/payment/contact/backend or dead buttons.
 5. Update actual status/evidence, handoff, three-minute shot list and submission disclosures. Review coherent commits before push. Final video/submit still needs owner approval.
 
+The later explicit UI assignment supersedes the earlier presentation restriction in step 1. The implemented redesign preserves the feature/domain contracts, private report flow, frozen Cedar and AWS boundaries; its actual evidence and remaining checks are recorded in [UI_REDESIGN_REPORT.md](UI_REDESIGN_REPORT.md).
+
 ## Starting feature matrix
 
 WORKING means executable behavior with evidence in the stated environment, not production acceptance. DEMO_SIMULATION means a functioning disclosed substitute/sample; PARTIALLY_WORKING identifies the missing portion. PLANNED and BLOCKED do not claim implementation.
 
 | Feature | Starting classification | Actual evidence / limitation | Authorized next action |
 |---|---|---|---|
-| Street map and attribution control | WORKING | Native MapLibre/OpenFreeMap streets on Redmi; internet required, attribution popup acceptance pending | Preserve; Aryan polishes layout |
+| Street map and attribution control | WORKING | Historical native MapLibre/OpenFreeMap Liberty streets on Redmi; internet required, physical attribution popup acceptance pending | Preserve; visuals initially assigned to Aryan, later reassigned to Codex |
 | Real Android camera/private draft/local upload | WORKING | One real staged Redmi JPEG/manual local confirmation; prior emulator restart evidence | Preserve; owner reports permission review, detailed cases not agent-verified |
 | Manual classification/consented public incident | WORKING | Local HTTP and phone evidence; no local image model | Preserve human confirmation |
 | Incident fusion/freshness | WORKING | Actual local domain/HTTP tests; two fixture identities, not independent citizens | Preserve |
@@ -50,7 +52,24 @@ First increment executed2026-10-08 at17:41 IST: My Water now has executable calc
 | Existing Android report/incident/route warning/ledger/Cedar | WORKING in previously evidenced local scope | All111 original tests retained, including40 frozen Cedar tests. Real local HTTP smoke still executes full report→warning→ledger/fusion/replay. Prior Redmi camera evidence remains historical; no new physical-camera result is inferred. |
 | Future AWS cloud deployment/Cedar Lambda | BLOCKED | Architecture/guards intact, BLOCKED_AWAITING_SSO / packaging unverified. Not a primary Build It dependency. |
 
-Current screenshot/controller evidence and pending visual/physical work are documented in [UI references](ui/README.md) and the implementation report. Calculator tests cannot make demo data genuine environmental measurements. No P0-completion or eligibility claim.
+The [seven before-design UI references](ui/README.md) and [implementation report](IMPLEMENTATION_REPORT.md) retain the feature-increment screenshot/controller evidence. They depict the earlier presentation, including Liberty on the map. Calculator tests cannot make demo data genuine environmental measurements. No P0-completion or eligibility claim.
 
+Historical feature-increment local gate: **15 suites / 165 tests**, preserving 111 core tests plus 54 additions (27 tank, 11 persistence, 16 Stress/demo contract). Format/lint/types/synth/Android export and `pnpm smoke:local --isolated` passed after the native input-format fix. Actual earlier emulator reset and 55%/35% simulation retests passed; native SQLite restart and Stress missing-data evidence remain separate from Redmi acceptance. Seven inspected synthetic before-design references were delivered. See [actual report](IMPLEMENTATION_REPORT.md). No final recording/submission or cloud verification occurred.
 
-Final local gate: **15 suites / 165 tests**, preserving 111 core tests plus 54 additions (27 tank, 11 persistence, 16 Stress/demo contract). Format/lint/types/synth/Android export and `pnpm smoke:local --isolated` passed after the native input-format fix. Actual emulator reset and 55%/35% simulation retests passed; native SQLite restart and Stress missing-data evidence are separate from the pending Redmi acceptance. Seven inspected synthetic UI references are delivered. See [actual report](IMPLEMENTATION_REPORT.md). No final recording/submission or cloud verification occurred.
+## Current UI/theme increment
+
+The final current-source gate after native polish **passed all eight local checks**: format/lint/types/synth, **181 tests across 16 suites**, Android export, real Cedar check and isolated local smoke. All 165 baseline tests are preserved, with 16 theme tests added. The replacement arm64 debug APK actually built, installed with `-r` and launched on the owned API37 emulator. The charged Redmi still needs the compatible replacement installed in place; wanted tank/draft/cache/appearance state must be preserved. See the [after-design screenshot pack](ui/redesign/README.md).
+
+| Current presentation / native observation | Actual evidence and acceptance limit |
+|---|---|
+| System/Light/Dark Appearance | Exactly three choices, immediate Light/Dark overrides, System following OS Dark→Light, System cold restart and explicit Light/Dark cold restarts: native PASS. Existing SQLite preference/ordered persistence retained. Redesigned Redmi acceptance remains pending. |
+| LOCAL basemap and credits | Positron Light; bundled adapted OpenFreeMap Dark with [source/design notices](../third-party/openfreemap-styles/README.md). Both native maps rendered; panned viewport/chosen pin/route retained across appearance changes. New 48 dp credit popups PASS in both modes; only the three standard data-source credits were visibly confirmed. Dark Matter/JalNet notices remain linked separately. External map assets need internet. |
+| Inspected synthetic native screens | Home/warning/event details, basic water/supplier screens and Stress default 60/HIGH/100% in both modes. Profile both modes: 4 droplets, +2/+2 ledger entries. HeatSafe PLANNED Light/Dark. [Exact matrix](UI_REDESIGN_REPORT.md) and 36-capture pack distinguish iterations and pending cases; no blanket native pass. |
+| My Water arithmetic and retention | Native reset 900 L/60%/~72h; one simulation 600 L/40%/~48h. Final Light cold restart restored 600 L/40%/~48h/day 1 with 1,500 L USER ENTERED capacity. Earlier 75%/1,125 L/~90h APK-update/cold-restart result remains historical. Owner MW-01/MW-02 describe earlier phone UI; MW-02 source/day unreported and physical MW-03 interrupted. |
+| My Water invalid edit | Capacity 0 suppressed result/disabled simulation; invalid text retained across theme change. A valid intermediate capacity 1 had already saved during per-character edits, so this does not prove the preceding 600 L tank stayed unchanged throughout the edit sequence. Invalid 0 itself was not saved. |
+| Keyboard, consent and compact enlarged text | Dark focused note visible above Gboard; consent 52×48 dp. At 840×1800 pixels/density 420/font scale 1.3: Dark Home warning clearance, Light Water tab visibility, focused numeric/error visibility and reachable footer actions PASS. Complete accessibility/physical acceptance remains pending. |
+| Recovered private draft confirmation | Mobile-only lat/lon normalization fixed source/accuracy metadata rejection. Preserved JPEG restored/confirmed through native local HTTP in Dark, followed by warning/ledger: PASS. All eight final checks PASS at 181/16; API/schema/storage/backend/Cedar unchanged. |
+| Host/OS interruptions | Host QEMU `EXC_BAD_ACCESS` after about three hours; no conclusive root cause/JalNet app crash established by supplied log. Same AVD recovered headlessly without data clear; OS WebView update killed JalNet, Android crash buffer empty, relaunch succeeded. Scoped emulator inspection complete. |
+| Remaining native/physical cases | Stress limited/missing/invalid, empty tank/zero-use not retaken for redesigned UI. Full TalkBack, Redmi, target performance, offline and full permission/recovery matrix PENDING; five physical rehearsals/final video PENDING. |
+
+The UI assignment does not authorize new cloud/feature functionality. Cedar remains frozen at `9422fc2`; AWS remains **BLOCKED_AWAITING_SSO** with intended profile `jalnet` / region `ap-south-1`. All five timed physical rehearsals and final recording/submission remain pending; no P0 completion or eligibility claim.

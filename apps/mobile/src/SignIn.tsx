@@ -3,9 +3,9 @@ import * as AuthSession from "expo-auth-session";
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
-import { Text, View } from "react-native";
 import { Button } from "./Button";
 import { mobileConfig } from "./api";
+import { AppText, Card, StateMessage, StatusPill } from "./design";
 import { jsonRequest } from "./transport";
 import { z } from "zod";
 
@@ -76,9 +76,17 @@ export function SignIn() {
     }
   };
   return (
-    <View style={{ gap: 12 }}>
+    <Card>
+      <StatusPill label="Private account" icon="shield" tone="muted" />
+      <AppText variant="heading">Your JalNet account</AppText>
+      <AppText variant="caption" tone="muted">
+        Sign in through Cognito to access your account-scoped reports, saved
+        routes and drafts. Sign-out keeps private drafts on this device with
+        their original account.
+      </AppText>
       <Button
         title={busy ? "Signing in…" : "Sign in with Cognito"}
+        icon="user"
         disabled={busy}
         onPress={() => {
           void signIn();
@@ -86,6 +94,8 @@ export function SignIn() {
       />
       <Button
         title="Sign out"
+        icon="logout"
+        variant="secondary"
         disabled={busy}
         onPress={() => {
           setBusy(true);
@@ -106,7 +116,13 @@ export function SignIn() {
             .finally(() => setBusy(false));
         }}
       />
-      {error ? <Text accessibilityRole="alert">{error}</Text> : null}
-    </View>
+      {error ? (
+        <StateMessage
+          title="Account action needs attention"
+          body={error}
+          tone="danger"
+        />
+      ) : null}
+    </Card>
   );
 }
